@@ -1,0 +1,18 @@
+# Ignore virtual environment folder 
+venv/ 
+ 
+# Ignore sources folder 
+sources/ 
+ 
+# Ignore PowerPoint files 
+*.ppt 
+*.pptx 
+ 
+# Ignore Excel files 
+*.xls 
+*.xlsx 
+*.csv 
+ 
+# Ignore Word documents 
+*.doc 
+*.docx 

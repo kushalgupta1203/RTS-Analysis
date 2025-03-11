@@ -1,0 +1,23 @@
+Data for 01-01-2024 to 31-12-2024:
+
+*   consumer name (first name, last name)
+*   consumer father/guardians name (first name last name)
+*   gender (male female others)
+*   state / union territory (28 Indian states and 8 Indian union territories)
+*   district (as per the state and union territory)
+*   date of birth (in dd/mm/yyyy, no user can be below 18 years old, on or before 01-01-2024)
+*   ca number (consumer account number)
+*   email address (should be proper)
+*   registration date (for the application of solar rooftop installation, on or after 01-01-2024 to 31-12-2024)
+*   application approved date (01-01-2024 to 31-12-2024)
+*   application number (with month year and 7 digit numerical code)
+*   vendor selected name (first name last name)
+*   vendor selected organisation name (random name from your side related to solar)
+*   vendor selection date (01-01-2024 to 31-12-2024)
+*   vendor acceptance date (01-01-2024 to 31-12-2024)
+*   installation date (01-01-2024 to 31-12-2024)
+*   inspection date (by distribution company 01-01-2024 to 31-12-2024)
+*   claim submission date (01-01-2024 to 31-12-2024)
+*   claim release date (01-01-2024 to 31-12-2024)
+
+For each application the date will be like - registration -> application approved -> vendor selection date -> vendor acceptance date -> installation date -> inspection date -> claim submission date -> claim release date

@@ -1,0 +1,9 @@
+# Activate virtual environment
+cd "D:\Projects\RTS Analysis"
+.\venv\Scripts\Activate
+
+# Install requirements
+pip install -r requirements.txt
+
+# Generation of dataset
+python consumer_dataset_generation.py

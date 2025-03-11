@@ -300,7 +300,7 @@ def generate_dates_sequence():
         "installation": 45,
         "inspection": 15,
         "claim_submission": 10,
-        "claim_release": 30
+        "claim_release":120
     }
     
     # Calculate dates with random gaps

@@ -357,9 +357,9 @@ status_weights = [x / sum(status_ratio) for x in status_ratio]
 
 # State Production Share Ratio
 production_share = {
-    "Rajasthan": 16.99990, "Gujarat": 9.22990, "Karnataka": 8.21990, "Tamil Nadu": 6.70990,
-    "Maharashtra": 4.70990, "Telangana": 4.64990, "Andhra Pradesh": 4.51990, "Madhya Pradesh": 2.78990,
-    "Uttar Pradesh": 2.50990, "Punjab": 1.15990, "Haryana": 1.02990, "Chhattisgarh": 0.94990,
+    "Gujarat": 16.99990, "Maharashtra": 9.22990, "Uttar Pradesh": 8.21990, "Rajasthan": 6.70990,
+    "Karnataka": 4.70990, "Telangana": 4.64990, "Andhra Pradesh": 4.51990, "Madhya Pradesh": 2.78990,
+    "Tamil Nadu": 2.50990, "Punjab": 1.15990, "Haryana": 1.02990, "Chhattisgarh": 0.94990,
     "Kerala": 0.75990, "Uttarakhand": 0.56990, "Odisha": 0.44990, "Delhi": 0.21990,
     "Bihar": 0.18990, "West Bengal": 0.17990, "Assam": 0.14990, "Jharkhand": 0.10990,
     "Himachal Pradesh": 0.09990, "Jammu and Kashmir": 0.05990, "Puducherry": 0.04990,
@@ -378,6 +378,8 @@ state_list = [state for state in STATES + UNION_TERRITORIES if state in producti
 num_records = 948576
 data = []
 
+
+# --- Data Generation Loop ---
 for _ in range(num_records):
     # Select state based on solar production share
     state = random.choices(state_list, weights=state_weights, k=1)[0]

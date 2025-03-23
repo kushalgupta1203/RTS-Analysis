@@ -2,7 +2,7 @@ import pandas as pd
 
 # Define the file location and columns to extract
 input_file = r"D:\Projects\RTS Analysis\consumer_application_data.csv"
-output_file = r"D:\Projects\RTS Analysis\extracted_application_data.csv"
+output_file = r"D:\Projects\RTS Analysis\consumer_preprocessed_data.csv"
 
 # List of columns to be extracted
 columns_to_extract = [

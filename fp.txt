@@ -2,5 +2,6 @@
 *  Monthly Distribution Ratio
 *  RWA Analysis
 *  Vendor Analysis
-*  Power Generation Analysis
-*  Embedded Excel Sheet
+*  Power Generation Capacity
+*  Power BI Dashboard
+*  Presentation

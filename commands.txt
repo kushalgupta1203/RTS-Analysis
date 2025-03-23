@@ -5,5 +5,3 @@ cd "D:\Projects\RTS Analysis"
 # Install requirements
 pip install -r requirements.txt
 
-# Generation of dataset
-python consumer_dataset_generation.py

@@ -1,4 +1,5 @@
-*  OEM Analysis
+*  Application Acceptance Ratio
+*  Monthly Distribution Ratio
 *  RWA Analysis
 *  Vendor Analysis
 *  Power Generation Analysis

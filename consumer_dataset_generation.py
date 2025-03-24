@@ -209,6 +209,19 @@ UNION_TERRITORY_DISTRICTS = {
     "Puducherry": ["Karaikal", "Mahe", "Pondicherry", "Yanam"]
 }
 
+ACCEPTANCE_RATIOS = {
+    "Andhra Pradesh": 0.20, "Arunachal Pradesh": 0.25, "Assam": 0.30, "Bihar": 0.40,
+    "Chhattisgarh": 0.22, "Goa": 0.35, "Gujarat": 0.28, "Haryana": 0.32,
+    "Himachal Pradesh": 0.27, "Jharkhand": 0.38, "Karnataka": 0.29, "Kerala": 0.31,
+    "Madhya Pradesh": 0.33, "Maharashtra": 0.26, "Manipur": 0.39, "Meghalaya": 0.24,
+    "Mizoram": 0.23, "Nagaland": 0.37, "Odisha": 0.34, "Punjab": 0.21,
+    "Rajasthan": 0.40, "Sikkim": 0.36, "Tamil Nadu": 0.25, "Telangana": 0.28,
+    "Tripura": 0.30, "Uttar Pradesh": 0.32, "Uttarakhand": 0.29, "West Bengal": 0.31,
+    "Andaman and Nicobar Islands": 0.22, "Chandigarh": 0.33,
+    "Dadra and Nagar Haveli and Daman and Diu": 0.27, "Delhi": 0.24,
+    "Jammu and Kashmir": 0.35, "Ladakh": 0.38, "Lakshadweep": 0.26, "Puducherry": 0.39
+}
+
 
 for state, discoms in STATE_DISCOM_MAP.items():
     if not discoms:

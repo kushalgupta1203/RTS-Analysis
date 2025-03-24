@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from faker import Faker
 import string
 
-
 # Set a seed for reproducibility
 np.random.seed(42)
 random.seed(42)
@@ -209,6 +208,21 @@ UNION_TERRITORY_DISTRICTS = {
     "Puducherry": ["Karaikal", "Mahe", "Pondicherry", "Yanam"]
 }
 
+# State Production Share Ratio
+production_share = {
+    "Gujarat": 16.99990, "Maharashtra": 9.22990, "Uttar Pradesh": 8.21990, "Rajasthan": 6.70990,
+    "Karnataka": 4.70990, "Telangana": 4.64990, "Andhra Pradesh": 4.51990, "Madhya Pradesh": 2.78990,
+    "Tamil Nadu": 2.50990, "Punjab": 1.15990, "Haryana": 1.02990, "Chhattisgarh": 0.94990,
+    "Kerala": 0.75990, "Uttarakhand": 0.56990, "Odisha": 0.44990, "Delhi": 0.21990,
+    "Bihar": 0.18990, "West Bengal": 0.17990, "Assam": 0.14990, "Jharkhand": 0.10990,
+    "Himachal Pradesh": 0.09990, "Jammu and Kashmir": 0.05990, "Puducherry": 0.04990,
+    "Mizoram": 0.03990, "Goa": 0.03990, "Andaman and Nicobar Islands": 0.03990,
+    "Chandigarh": 0.05990, "Tripura": 0.02990, "Dadra and Nagar Haveli and Daman and Diu": 0.01990,
+    "Manipur": 0.01990, "Arunachal Pradesh": 0.01990, "Sikkim": 0.00990, "Nagaland": 0.00990,
+    "Lakshadweep": 0.00990, "Meghalaya": 0.00990
+}
+
+
 ACCEPTANCE_RATIOS = {
     "Andhra Pradesh": 0.20, "Arunachal Pradesh": 0.25, "Assam": 0.30, "Bihar": 0.40,
     "Chhattisgarh": 0.22, "Goa": 0.35, "Gujarat": 0.28, "Haryana": 0.32,
@@ -251,21 +265,19 @@ def random_date(start_date, end_date):
     return start_date + timedelta(days=random_days)
 
 def random_dob():
-    """Generate a random date of birth (at least 18 years old on Jan 1, 2024)"""
+    """Generate a random date of birth ensuring ages are uniformly distributed between 18 and 75 years."""
     today = datetime.strptime('01-01-2024', '%d-%m-%Y')
+    min_age = 18
     max_age = 75
-    earliest_birth_date = today - timedelta(days=max_age * 365)  # Approximate
 
-    # Generate a random date between start_date and the earliest valid birth date
-    generated_date = random_date(ADULT_DATE - timedelta(days=365*57), earliest_birth_date)
+    # Generate a random age in the range [18, 75]
+    random_age = random.randint(min_age, max_age)
 
-    # Check if the generated date is within the age range (18-75)
-    age = today.year - generated_date.year - ((today.month, today.day) < (generated_date.month, generated_date.day))
-    if 18 <= age <= 75:
-        return generated_date
-    else:
-        # If the generated date is outside the age range, return a default valid date (e.g., 50 years old)
-        return today - timedelta(days=365*50)
+    # Compute the birthdate based on the random age
+    random_days = random.randint(0, 364)  # Vary birthdate within the chosen year
+    birth_date = today - timedelta(days=(random_age * 365 + random_days))
+
+    return birth_date
 
 application_numbers = set()
 ca_numbers = set()
@@ -373,27 +385,12 @@ status_options = ["Approved", "Pending", "Rejected", "Installed", "Claim Submitt
 status_ratio = [20, 25, 7, 35, 13, 10]  # Adjusted ratios
 status_weights = [x / sum(status_ratio) for x in status_ratio]
 
-# State Production Share Ratio
-production_share = {
-    "Gujarat": 16.99990, "Maharashtra": 9.22990, "Uttar Pradesh": 8.21990, "Rajasthan": 6.70990,
-    "Karnataka": 4.70990, "Telangana": 4.64990, "Andhra Pradesh": 4.51990, "Madhya Pradesh": 2.78990,
-    "Tamil Nadu": 2.50990, "Punjab": 1.15990, "Haryana": 1.02990, "Chhattisgarh": 0.94990,
-    "Kerala": 0.75990, "Uttarakhand": 0.56990, "Odisha": 0.44990, "Delhi": 0.21990,
-    "Bihar": 0.18990, "West Bengal": 0.17990, "Assam": 0.14990, "Jharkhand": 0.10990,
-    "Himachal Pradesh": 0.09990, "Jammu and Kashmir": 0.05990, "Puducherry": 0.04990,
-    "Mizoram": 0.03990, "Goa": 0.03990, "Andaman and Nicobar Islands": 0.03990,
-    "Chandigarh": 0.05990, "Tripura": 0.02990, "Dadra and Nagar Haveli and Daman and Diu": 0.01990,
-    "Manipur": 0.01990, "Arunachal Pradesh": 0.01990, "Sikkim": 0.00990, "Nagaland": 0.00990,
-    "Lakshadweep": 0.00990, "Meghalaya": 0.00990
-}
-
-
 # Normalizing Production Share as Weights
 state_weights = [production_share[state] / sum(production_share.values()) for state in STATES + UNION_TERRITORIES if state in production_share]
 state_list = [state for state in STATES + UNION_TERRITORIES if state in production_share]  # Ensure STATES and UNION_TERRITORIES are combined
 
 # --- Data Generation ---
-num_records = 4948576
+num_records = 8576
 data = []
 
 
@@ -429,38 +426,38 @@ for _ in range(num_records):
     district = get_random_district(state)
     gender = random.choices(gender_options, weights=gender_weights, k=1)[0]
     dates = generate_dates_sequence()
-    date_of_birth = generated_date
     date_of_birth = random_dob()
     registration_date = dates["registration_date"]
     discom_name = random.choice(STATE_DISCOM_MAP[state])
 
     # Generate the rest of the data
     record = {
-        "consumer_first_name": consumer_first_name,
-        "consumer_last_name": consumer_last_name,
-        "guardian_first_name": guardian_first_name,
-        "guardian_last_name": guardian_last_name,
-        "gender": gender,
-        "state_ut": state,
-        "district": district,
-        "date_of_birth": date_of_birth.strftime('%Y-%m-%d'),
-        "ca_number": generate_unique_9digit_ca_number(),
-        "discom_name": discom_name,
-        "email_address": generate_email(consumer_first_name, consumer_last_name),
-        "registration_date": registration_date.strftime('%Y-%m-%d'),
-        "acceptance_status": acceptance_status,
-        "application_approved_date": dates["approval_date"].strftime('%Y-%m-%d'),
-        "application_number": generate_unique_application_number(),
-        "vendor_first_name": fake.first_name(),
-        "vendor_last_name": fake.last_name(),
-        "vendor_organization": random.choice(SOLAR_ORGANIZATIONS),
-        "vendor_selection_date": dates["vendor_selection_date"].strftime('%Y-%m-%d'),
-        "vendor_acceptance_date": dates["vendor_acceptance_date"].strftime('%Y-%m-%d'),
-        "installation_date": dates["installation_date"].strftime('%Y-%m-%d'),
-        "inspection_date": dates["inspection_date"].strftime('%Y-%m-%d'),
-        "claim_submission_date": dates["claim_submission_date"].strftime('%Y-%m-%d'),
-        "claim_release_date": dates["claim_release_date"].strftime('%Y-%m-%d'),
+        "Consumer First Name": consumer_first_name,
+        "Consumer Last Name": consumer_last_name,
+        "Guardian First Name": guardian_first_name,
+        "Guardian Last Name": guardian_last_name,
+        "Gender": gender,
+        "State/UT": state,
+        "District": district,
+        "Date Of Birth": date_of_birth.strftime('%Y-%m-%d'),
+        "CA Number": generate_unique_9digit_ca_number(),
+        "Discom Name": discom_name,
+        "Email Address": generate_email(consumer_first_name, consumer_last_name),
+        "Registration Date": registration_date.strftime('%Y-%m-%d'),
+        "Acceptance Status": acceptance_status,
+        "Application Approved Date": dates["approval_date"].strftime('%Y-%m-%d'),
+        "Application Number": generate_unique_application_number(),
+        "Vendor First Name": fake.first_name(),
+        "Vendor Last Name": fake.last_name(),
+        "Vendor Organization": random.choice(SOLAR_ORGANIZATIONS),
+        "Vendor Selection Date": dates["vendor_selection_date"].strftime('%Y-%m-%d'),
+        "Vendor Acceptance Date": dates["vendor_acceptance_date"].strftime('%Y-%m-%d'),
+        "Installation Date": dates["installation_date"].strftime('%Y-%m-%d'),
+        "Inspection Date": dates["inspection_date"].strftime('%Y-%m-%d'),
+        "Subsidy Redeemed Date": dates["claim_submission_date"].strftime('%Y-%m-%d'),
+        "Subsidy Released Date": dates["claim_release_date"].strftime('%Y-%m-%d'),
     }
+
     data.append(record)
 
 # --- DataFrame Creation and Export ---

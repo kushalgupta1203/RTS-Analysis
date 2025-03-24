@@ -1,41 +1,38 @@
 import pandas as pd
+from ydata_profiling import ProfileReport  
 
 # Define the file location and columns to extract
 input_file = r"D:\Projects\RTS Analysis\consumer_application_data.csv"
 output_file = r"D:\Projects\RTS Analysis\consumer_preprocessed_data.csv"
 
-# List of columns to be extracted
+# List of columns to be extracted (Fixed Commas & List Syntax)
 columns_to_extract = [
-    "application_number",
-    "gender",
-    "state_ut",
-    "district",
-    "discom_name",
-    "registration_date",
-    "application_approved_date",
-    "vendor_organization",
-    "vendor_selection_date",
-    "vendor_acceptance_date",
-    "installation_date",
-    "inspection_date",
-    "claim_submission_date",
-    "claim_release_date"
+    "Application Number",
+    "Gender",
+    "State/UT",
+    "District",
+    "Discom Name",
+    "Registration Date",
+    "Acceptance Status",
+    "Production Capacity (KW)",
+    "Application Approved Date",
+    "Vendor Organization",
+    "Vendor Selection Date",
+    "Vendor Acceptance Date",
+    "Installation Date",
+    "Inspection Date",
+    "Subsidy Redeemed Date",
+    "Subsidy Released Date"
 ]
 
-# Read the CSV file
-try:
-    df = pd.read_csv(input_file, usecols=columns_to_extract)
-    
-    # Rename columns to remove underscores and capitalize first letter
-    df.columns = [col.replace('_', ' ').title() for col in df.columns]
-    
-    # Ensure 'Application Number' is the first column
-    reordered_columns = ['Application Number'] + [col for col in df.columns if col != 'Application Number']
-    df = df[reordered_columns]
-    
-    # Write the new DataFrame to a new CSV file
-    df.to_csv(output_file, index=False)
-    
-    print(f"Data extracted successfully to {output_file}")
-except Exception as e:
-    print(f"An error occurred: {e}")
+# Read the CSV file (Fixed Path)
+df = pd.read_csv(input_file, usecols=columns_to_extract)
+
+# Generate the profiling report
+profile = ProfileReport(df, title="Solar Energy Applicants Report", explorative=True)
+
+# Save the report to an HTML file
+profile.to_file("solar_applicant_sample_report.html")
+
+# To view directly in Jupyter Notebook
+profile.to_notebook_iframe()

@@ -279,6 +279,39 @@ def random_dob():
 
     return birth_date
 
+def weighted_month_selection():
+    """
+    Select a month with specific weighting:
+    - January: Minimum
+    - July: Second highest
+    - November/December: Highest
+    - Other months: Medium
+    """
+    # Define weights for each month (1-12)
+    month_weights = {
+        1: 0.03,   # January - minimum
+        2: 0.05,
+        3: 0.06,
+        4: 0.07,
+        5: 0.08,
+        6: 0.09,
+        7: 0.15,   # July - second highest
+        8: 0.09,
+        9: 0.08,
+        10: 0.09,
+        11: 0.12,  # November - high
+        12: 0.09   # December - high
+    }
+    
+    # Select a month based on weights
+    month = random.choices(
+        population=list(month_weights.keys()),
+        weights=list(month_weights.values()),
+        k=1
+    )[0]
+    
+    return month
+
 application_numbers = set()
 ca_numbers = set()
 
@@ -324,9 +357,29 @@ def assign_production_capacity():
         return "Above 6 KW"
 
 def generate_dates_sequence():
-    """Generate a sequence of dates for the solar application process"""
-    # Registration date
-    registration_date = random_date(START_DATE, END_DATE)
+    """Generate a sequence of dates for the solar application process with monthly distribution"""
+    # Select month based on specified distribution
+    month = weighted_month_selection()
+    
+    # Generate a random day within that month
+    year = 2024
+    if month == 2:  # February
+        max_day = 29  # 2024 is a leap year
+    elif month in [4, 6, 9, 11]:  # 30-day months
+        max_day = 30
+    else:  # 31-day months
+        max_day = 31
+    
+    day = random.randint(1, max_day)
+    
+    # Create registration date
+    registration_date = datetime(year, month, day)
+    
+    # Ensure registration date is within bounds
+    if registration_date < START_DATE:
+        registration_date = START_DATE
+    if registration_date > END_DATE:
+        registration_date = END_DATE
     
     # Minimum time gaps between steps (in days)
     min_gaps = {
@@ -347,7 +400,7 @@ def generate_dates_sequence():
         "installation": 45,
         "inspection": 15,
         "claim_submission": 10,
-        "claim_release":120
+        "claim_release": 120
     }
     
     # Calculate dates with random gaps
@@ -391,16 +444,11 @@ def generate_dates_sequence():
         "claim_submission_date": claim_submission_date,
         "claim_release_date": claim_release_date
     }
-
 # Gender Options and Ratio
 gender_options = ["Male", "Female", "Other"]
 gender_ratio = [55, 41, 4]  # 55:41:4
 gender_weights = [x / sum(gender_ratio) for x in gender_ratio]
 
-# Application Status Options and Ratio
-status_options = ["Approved", "Pending", "Rejected", "Installed", "Claim Submitted", "Claim Released"]
-status_ratio = [20, 25, 7, 35, 13, 10]  # Adjusted ratios
-status_weights = [x / sum(status_ratio) for x in status_ratio]
 
 # Normalizing Production Share as Weights
 state_weights = [production_share[state] / sum(production_share.values()) for state in STATES + UNION_TERRITORIES if state in production_share]
@@ -410,40 +458,31 @@ state_list = [state for state in STATES + UNION_TERRITORIES if state in producti
 num_records = 8576
 data = []
 
-
 # --- Data Generation Loop ---
 for _ in range(num_records):
     # Select state based on solar production share
     state = random.choices(state_list, weights=state_weights, k=1)[0]
 
-    # SELECT BASED ON ACCEPTANCE RATIO
+    # Select based on acceptance ratio
     state = random.choices(acceptance_ratio_list, weights=acceptance_ratio_weights, k=1)[0]
 
     # Acceptance Logic
     acceptance_ratio = ACCEPTANCE_RATIOS.get(state, 0.3)  # Default to 30% if state not found
     is_accepted = random.random() < acceptance_ratio
-
-    # Determine acceptance status string based on is_accepted
     acceptance_status = "Accepted" if is_accepted else "Rejected"
-
 
     # Generate basic information
     consumer_first_name = fake.first_name()
     consumer_last_name = fake.last_name()
-    
-    # 98% same last name as applicant
-    if random.random() < 0.98:
-        guardian_last_name = consumer_last_name
-    else:
-        guardian_last_name = fake.last_name()
-    
-    guardian_first_name = fake.first_name()
-    generated_date = random_date(ADULT_DATE - timedelta(days=365*57), END_DATE)
 
+    # 98% same last name as applicant
+    guardian_last_name = consumer_last_name if random.random() < 0.98 else fake.last_name()
+    guardian_first_name = fake.first_name()
+
+    date_of_birth = random_dob()
     district = get_random_district(state)
     gender = random.choices(gender_options, weights=gender_weights, k=1)[0]
     dates = generate_dates_sequence()
-    date_of_birth = random_dob()
     registration_date = dates["registration_date"]
     discom_name = random.choice(STATE_DISCOM_MAP[state])
 
@@ -473,16 +512,14 @@ for _ in range(num_records):
         "Installation Date": dates["installation_date"].strftime('%Y-%m-%d'),
         "Inspection Date": dates["inspection_date"].strftime('%Y-%m-%d'),
         "Subsidy Redeemed Date": dates["claim_submission_date"].strftime('%Y-%m-%d'),
-        "Subsiday Released Date": dates["claim_release_date"].strftime('%Y-%m-%d'),
+        "Subsidy Released Date": dates["claim_release_date"].strftime('%Y-%m-%d'),
     }
-
     data.append(record)
 
 # --- DataFrame Creation and Export ---
-# Create DataFrame
 df = pd.DataFrame(data)
 
 # Export to CSV
 df.to_csv("consumer_application_data.csv", index=False)
 
-print("Data generation complete. CSV file created: solar_application_data.csv")
+print("Data generation complete. CSV file created: consumer_application_data.csv")

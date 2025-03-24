@@ -222,6 +222,9 @@ ACCEPTANCE_RATIOS = {
     "Jammu and Kashmir": 0.35, "Ladakh": 0.38, "Lakshadweep": 0.26, "Puducherry": 0.39
 }
 
+# Acceptance Ratio
+acceptance_ratio_weights = [ACCEPTANCE_RATIOS[state] / sum(ACCEPTANCE_RATIOS.values()) for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
+acceptance_ratio_list = [state for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
 
 for state, discoms in STATE_DISCOM_MAP.items():
     if not discoms:
@@ -385,12 +388,6 @@ production_share = {
 }
 
 
-# Acceptance Ratio
-acceptance_ratio_weights = [ACCEPTANCE_RATIOS[state] / sum(ACCEPTANCE_RATIOS.values()) for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
-acceptance_ratio_list = [state for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
-
-
-
 # Normalizing Production Share as Weights
 state_weights = [production_share[state] / sum(production_share.values()) for state in STATES + UNION_TERRITORIES if state in production_share]
 state_list = [state for state in STATES + UNION_TERRITORIES if state in production_share]  # Ensure STATES and UNION_TERRITORIES are combined
@@ -414,6 +411,7 @@ for _ in range(num_records):
 
     # Determine acceptance status string based on is_accepted
     acceptance_status = "Accepted" if is_accepted else "Rejected"
+
 
     # Generate basic information
     consumer_first_name = fake.first_name()
@@ -450,6 +448,7 @@ for _ in range(num_records):
         "discom_name": discom_name,
         "email_address": generate_email(consumer_first_name, consumer_last_name),
         "registration_date": registration_date.strftime('%Y-%m-%d'),
+        "acceptance_status": acceptance_status,
         "application_approved_date": dates["approval_date"].strftime('%Y-%m-%d'),
         "application_number": generate_unique_application_number(),
         "vendor_first_name": fake.first_name(),

@@ -385,12 +385,18 @@ production_share = {
 }
 
 
+# Acceptance Ratio
+acceptance_ratio_weights = [ACCEPTANCE_RATIOS[state] / sum(ACCEPTANCE_RATIOS.values()) for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
+acceptance_ratio_list = [state for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
+
+
+
 # Normalizing Production Share as Weights
 state_weights = [production_share[state] / sum(production_share.values()) for state in STATES + UNION_TERRITORIES if state in production_share]
 state_list = [state for state in STATES + UNION_TERRITORIES if state in production_share]  # Ensure STATES and UNION_TERRITORIES are combined
 
 # --- Data Generation ---
-num_records = 948576
+num_records = 4948576
 data = []
 
 
@@ -398,6 +404,16 @@ data = []
 for _ in range(num_records):
     # Select state based on solar production share
     state = random.choices(state_list, weights=state_weights, k=1)[0]
+
+    # SELECT BASED ON ACCEPTANCE RATIO
+    state = random.choices(acceptance_ratio_list, weights=acceptance_ratio_weights, k=1)[0]
+
+    # Acceptance Logic
+    acceptance_ratio = ACCEPTANCE_RATIOS.get(state, 0.3)  # Default to 30% if state not found
+    is_accepted = random.random() < acceptance_ratio
+
+    # Determine acceptance status string based on is_accepted
+    acceptance_status = "Accepted" if is_accepted else "Rejected"
 
     # Generate basic information
     consumer_first_name = fake.first_name()

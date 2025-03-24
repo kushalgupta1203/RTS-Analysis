@@ -352,18 +352,6 @@ def assign_production_capacity():
     else:
         return "Above 6 KW"
 
-def format_date_safely(date_obj):
-    """
-    Format a date object to 'YYYY-MM-DD' string format if it's not None.
-    Returns 'Pending' if the date object is None.
-    
-    Args:
-        date_obj (datetime or None): The date object to format
-        
-    Returns:
-        str: Formatted date string or 'Pending'
-    """
-    return date_obj.strftime('%Y-%m-%d') if date_obj is not None else "Pending"
 
 
 def generate_dates_sequence():
@@ -521,20 +509,29 @@ acceptance_ratio_list = [state for state in STATES + UNION_TERRITORIES if state 
 state_weights = [production_share[state] / sum(production_share.values()) for state in STATES + UNION_TERRITORIES if state in production_share]
 state_list = [state for state in STATES + UNION_TERRITORIES if state in production_share]  # Ensure STATES and UNION_TERRITORIES are combined
 
+combined_weights = {}
+for state in set(state_list + acceptance_ratio_list):
+    prod_weight = production_share.get(state, 0) / sum(production_share.values()) if state in production_share else 0
+    acc_weight = ACCEPTANCE_RATIOS.get(state, 0.3) / sum(ACCEPTANCE_RATIOS.values()) if state in ACCEPTANCE_RATIOS else 0
+    
+    # You can adjust how much each factor matters (e.g., 0.7*prod + 0.3*acc)
+    combined_weights[state] = 0.7 * prod_weight + 0.3 * acc_weight
+
+combined_state_list = list(combined_weights.keys())
+combined_weight_values = [combined_weights[state] for state in combined_state_list]
+
+
 # --- Data Generation ---
-num_records = 8576
+num_records = 1087654
 data = []
 
 # --- Data Generation Loop ---
 for _ in range(num_records):
-    # Select state based on solar production share
-    state = random.choices(state_list, weights=state_weights, k=1)[0]
-
-    # Select based on acceptance ratio
-    state = random.choices(acceptance_ratio_list, weights=acceptance_ratio_weights, k=1)[0]
-
+    # Select state using combined weights
+    state = random.choices(combined_state_list, weights=combined_weight_values, k=1)[0]
+    
     # Acceptance Logic
-    acceptance_ratio = ACCEPTANCE_RATIOS.get(state, 0.3)  # Default to 30% if state not found
+    acceptance_ratio = ACCEPTANCE_RATIOS.get(state, 0.3)
     is_accepted = random.random() < acceptance_ratio
     acceptance_status = "Accepted" if is_accepted else "Rejected"
 

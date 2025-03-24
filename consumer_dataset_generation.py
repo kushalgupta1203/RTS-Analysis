@@ -306,6 +306,23 @@ def generate_email(first_name, last_name):
     domain = random.choice(domains)
     return f"{name_part}{random_num}@{domain}"
 
+def assign_production_capacity():
+    """Assign production capacity based on given distribution"""
+    rand = random.uniform(0, 1)  # Random number between 0-1
+
+    if rand <= 168 / 44953:
+        return "1 - 2 KW"
+    elif rand <= (168 + 2496) / 44953:
+        return "2 - 3 KW"
+    elif rand <= (168 + 2496 + 31495) / 44953:
+        return "3 - 4 KW"
+    elif rand <= (168 + 2496 + 31495 + 6598) / 44953:
+        return "4 - 5 KW"
+    elif rand <= (168 + 2496 + 31495 + 6598 + 3300) / 44953:
+        return "5 - 6 KW"
+    else:
+        return "Above 6 KW"
+
 def generate_dates_sequence():
     """Generate a sequence of dates for the solar application process"""
     # Registration date
@@ -445,6 +462,7 @@ for _ in range(num_records):
         "Email Address": generate_email(consumer_first_name, consumer_last_name),
         "Registration Date": registration_date.strftime('%Y-%m-%d'),
         "Acceptance Status": acceptance_status,
+        "Production Capacity (KW)": assign_production_capacity(),
         "Application Approved Date": dates["approval_date"].strftime('%Y-%m-%d'),
         "Application Number": generate_unique_application_number(),
         "Vendor First Name": fake.first_name(),
@@ -455,7 +473,7 @@ for _ in range(num_records):
         "Installation Date": dates["installation_date"].strftime('%Y-%m-%d'),
         "Inspection Date": dates["inspection_date"].strftime('%Y-%m-%d'),
         "Subsidy Redeemed Date": dates["claim_submission_date"].strftime('%Y-%m-%d'),
-        "Subsidy Released Date": dates["claim_release_date"].strftime('%Y-%m-%d'),
+        "Subsiday Released Date": dates["claim_release_date"].strftime('%Y-%m-%d'),
     }
 
     data.append(record)

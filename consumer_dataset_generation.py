@@ -236,10 +236,6 @@ ACCEPTANCE_RATIOS = {
     "Jammu and Kashmir": 0.35, "Ladakh": 0.38, "Lakshadweep": 0.26, "Puducherry": 0.39
 }
 
-# Acceptance Ratio
-acceptance_ratio_weights = [ACCEPTANCE_RATIOS[state] / sum(ACCEPTANCE_RATIOS.values()) for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
-acceptance_ratio_list = [state for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
-
 for state, discoms in STATE_DISCOM_MAP.items():
     if not discoms:
         STATE_DISCOM_MAP[state] = NATIONAL_DISCOMS
@@ -356,6 +352,20 @@ def assign_production_capacity():
     else:
         return "Above 6 KW"
 
+def format_date_safely(date_obj):
+    """
+    Format a date object to 'YYYY-MM-DD' string format if it's not None.
+    Returns 'Pending' if the date object is None.
+    
+    Args:
+        date_obj (datetime or None): The date object to format
+        
+    Returns:
+        str: Formatted date string or 'Pending'
+    """
+    return date_obj.strftime('%Y-%m-%d') if date_obj is not None else "Pending"
+
+
 def generate_dates_sequence():
     """Generate a sequence of dates for the solar application process with monthly distribution"""
     # Select month based on specified distribution
@@ -374,12 +384,6 @@ def generate_dates_sequence():
     
     # Create registration date
     registration_date = datetime(year, month, day)
-    
-    # Ensure registration date is within bounds
-    if registration_date < START_DATE:
-        registration_date = START_DATE
-    if registration_date > END_DATE:
-        registration_date = END_DATE
     
     # Minimum time gaps between steps (in days)
     min_gaps = {
@@ -403,38 +407,73 @@ def generate_dates_sequence():
         "claim_release": 120
     }
     
-    # Calculate dates with random gaps
+    # Initialize all dates as None (pending)
+    approval_date = None
+    vendor_selection_date = None
+    vendor_acceptance_date = None
+    installation_date = None
+    inspection_date = None
+    claim_submission_date = None
+    claim_release_date = None
+    
+    # Calculate approval date
     approval_date = registration_date + timedelta(days=random.randint(min_gaps["approval"], max_gaps["approval"]))
     
-    # Ensure all dates fit within the year 2024
-    if approval_date > END_DATE:
-        approval_date = END_DATE
+    # Calculate subsequent dates only if there's enough time
+    # For each step, randomly decide if it should be completed based on time left
+    if approval_date <= END_DATE:
+        # Calculate vendor selection date
+        time_needed = random.randint(min_gaps["vendor_selection"], max_gaps["vendor_selection"])
+        potential_date = approval_date + timedelta(days=time_needed)
         
-    vendor_selection_date = approval_date + timedelta(days=random.randint(min_gaps["vendor_selection"], max_gaps["vendor_selection"]))
-    if vendor_selection_date > END_DATE:
-        vendor_selection_date = END_DATE
-        
-    vendor_acceptance_date = vendor_selection_date + timedelta(days=random.randint(min_gaps["vendor_acceptance"], max_gaps["vendor_acceptance"]))
-    if vendor_acceptance_date > END_DATE:
-        vendor_acceptance_date = END_DATE
-        
-    installation_date = vendor_acceptance_date + timedelta(days=random.randint(min_gaps["installation"], max_gaps["installation"]))
-    if installation_date > END_DATE:
-        installation_date = END_DATE
-        
-    inspection_date = installation_date + timedelta(days=random.randint(min_gaps["inspection"], max_gaps["inspection"]))
-    if inspection_date > END_DATE:
-        inspection_date = END_DATE
-        
-    claim_submission_date = inspection_date + timedelta(days=random.randint(min_gaps["claim_submission"], max_gaps["claim_submission"]))
-    if claim_submission_date > END_DATE:
-        claim_submission_date = END_DATE
-        
-    claim_release_date = claim_submission_date + timedelta(days=random.randint(min_gaps["claim_release"], max_gaps["claim_release"]))
-    if claim_release_date > END_DATE:
-        claim_release_date = END_DATE
+        if potential_date <= END_DATE:
+            vendor_selection_date = potential_date
+            
+            # Calculate vendor acceptance date
+            time_needed = random.randint(min_gaps["vendor_acceptance"], max_gaps["vendor_acceptance"])
+            potential_date = vendor_selection_date + timedelta(days=time_needed)
+            
+            if potential_date <= END_DATE:
+                vendor_acceptance_date = potential_date
+                
+                # Calculate installation date
+                time_needed = random.randint(min_gaps["installation"], max_gaps["installation"])
+                potential_date = vendor_acceptance_date + timedelta(days=time_needed)
+                
+                # Applications near the end of the year are less likely to complete installation
+                remaining_days = (END_DATE - vendor_acceptance_date).days
+                installation_chance = min(1.0, remaining_days / (max_gaps["installation"] * 1.5))
+                
+                if potential_date <= END_DATE and random.random() < installation_chance:
+                    installation_date = potential_date
+                    
+                    # Calculate inspection date
+                    time_needed = random.randint(min_gaps["inspection"], max_gaps["inspection"])
+                    potential_date = installation_date + timedelta(days=time_needed)
+                    
+                    if potential_date <= END_DATE:
+                        inspection_date = potential_date
+                        
+                        # Calculate claim submission date
+                        time_needed = random.randint(min_gaps["claim_submission"], max_gaps["claim_submission"])
+                        potential_date = inspection_date + timedelta(days=time_needed)
+                        
+                        if potential_date <= END_DATE:
+                            claim_submission_date = potential_date
+                            
+                            # Calculate claim release date - this is often delayed
+                            time_needed = random.randint(min_gaps["claim_release"], max_gaps["claim_release"])
+                            potential_date = claim_submission_date + timedelta(days=time_needed)
+                            
+                            # Claims near the end of the year often get delayed to next year
+                            remaining_days = (END_DATE - claim_submission_date).days
+                            release_chance = min(0.95, remaining_days / max_gaps["claim_release"])
+                            
+                            if potential_date <= END_DATE and random.random() < release_chance:
+                                claim_release_date = potential_date
     
-    return {
+    # Create a dictionary with status info
+    result = {
         "registration_date": registration_date,
         "approval_date": approval_date,
         "vendor_selection_date": vendor_selection_date,
@@ -442,13 +481,41 @@ def generate_dates_sequence():
         "installation_date": installation_date,
         "inspection_date": inspection_date,
         "claim_submission_date": claim_submission_date,
-        "claim_release_date": claim_release_date
+        "claim_release_date": claim_release_date,
+        "status": "Completed" if claim_release_date else "In Progress"
     }
+    
+    # Add more specific status info
+    if result["status"] == "In Progress":
+        if not approval_date:
+            result["status_detail"] = "Pending Approval"
+        elif not vendor_selection_date:
+            result["status_detail"] = "Pending Vendor Selection"
+        elif not vendor_acceptance_date:
+            result["status_detail"] = "Pending Vendor Acceptance"
+        elif not installation_date:
+            result["status_detail"] = "Pending Installation"
+        elif not inspection_date:
+            result["status_detail"] = "Pending Inspection"
+        elif not claim_submission_date:
+            result["status_detail"] = "Pending Claim Submission"
+        else:
+            result["status_detail"] = "Pending Claim Release"
+    else:
+        result["status_detail"] = "All Steps Completed"
+    
+    return result
+
+
+
 # Gender Options and Ratio
 gender_options = ["Male", "Female", "Other"]
-gender_ratio = [55, 41, 4]  # 55:41:4
+gender_ratio = [55, 44, 1]
 gender_weights = [x / sum(gender_ratio) for x in gender_ratio]
 
+# Acceptance Ratio
+acceptance_ratio_weights = [ACCEPTANCE_RATIOS[state] / sum(ACCEPTANCE_RATIOS.values()) for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
+acceptance_ratio_list = [state for state in STATES + UNION_TERRITORIES if state in ACCEPTANCE_RATIOS]
 
 # Normalizing Production Share as Weights
 state_weights = [production_share[state] / sum(production_share.values()) for state in STATES + UNION_TERRITORIES if state in production_share]
@@ -486,6 +553,10 @@ for _ in range(num_records):
     registration_date = dates["registration_date"]
     discom_name = random.choice(STATE_DISCOM_MAP[state])
 
+    # Helper function to format dates safely
+    def format_date_safely(date_obj):
+        return date_obj.strftime('%Y-%m-%d') if date_obj is not None else "Pending"
+
     # Generate the rest of the data
     record = {
         "Consumer First Name": consumer_first_name,
@@ -502,19 +573,21 @@ for _ in range(num_records):
         "Registration Date": registration_date.strftime('%Y-%m-%d'),
         "Acceptance Status": acceptance_status,
         "Production Capacity (KW)": assign_production_capacity(),
-        "Application Approved Date": dates["approval_date"].strftime('%Y-%m-%d'),
+        "Application Approved Date": format_date_safely(dates["approval_date"]),
         "Application Number": generate_unique_application_number(),
         "Vendor First Name": fake.first_name(),
         "Vendor Last Name": fake.last_name(),
         "Vendor Organization": random.choice(SOLAR_ORGANIZATIONS),
-        "Vendor Selection Date": dates["vendor_selection_date"].strftime('%Y-%m-%d'),
-        "Vendor Acceptance Date": dates["vendor_acceptance_date"].strftime('%Y-%m-%d'),
-        "Installation Date": dates["installation_date"].strftime('%Y-%m-%d'),
-        "Inspection Date": dates["inspection_date"].strftime('%Y-%m-%d'),
-        "Subsidy Redeemed Date": dates["claim_submission_date"].strftime('%Y-%m-%d'),
-        "Subsidy Released Date": dates["claim_release_date"].strftime('%Y-%m-%d'),
+        "Vendor Selection Date": format_date_safely(dates["vendor_selection_date"]),
+        "Vendor Acceptance Date": format_date_safely(dates["vendor_acceptance_date"]),
+        "Installation Date": format_date_safely(dates["installation_date"]),
+        "Inspection Date": format_date_safely(dates["inspection_date"]),
+        "Subsidy Redeemed Date": format_date_safely(dates["claim_submission_date"]),
+        "Subsidy Released Date": format_date_safely(dates["claim_release_date"]),
     }
+    
     data.append(record)
+
 
 # --- DataFrame Creation and Export ---
 df = pd.DataFrame(data)

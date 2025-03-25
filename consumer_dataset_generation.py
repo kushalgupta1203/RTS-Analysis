@@ -259,6 +259,8 @@ def assign_discoms_gaussian():
         # Select discoms based on Gaussian probability
         STATE_DISCOM_MAP[state] = random.sample(source_discoms, min(num_to_assign, num_discoms))
 
+assign_discoms_gaussian()
+
 # Combine state and UT districts
 DISTRICTS = {}
 DISTRICTS.update(STATE_DISTRICTS)
@@ -622,7 +624,7 @@ for _ in range(num_records):
         "District": district,
         "Date Of Birth": date_of_birth.strftime('%Y-%m-%d'),
         "CA Number": generate_unique_9digit_ca_number(),
-        "Discom Name": assign_discoms_gaussian(),
+        "Discom Name": STATE_DISCOM_MAP,
         "Email Address": generate_email(consumer_first_name, consumer_last_name),
         "Registration Date": registration_date.strftime('%Y-%m-%d'),
         "Acceptance Status": acceptance_status,

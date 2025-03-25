@@ -245,16 +245,19 @@ def assign_discoms_gaussian():
 
         num_discoms = len(source_discoms)
 
+        if num_discoms == 0:  # Prevent empty assignments
+            STATE_DISCOM_MAP[state] = NATIONAL_DISCOMS
+            continue
+
         # Gaussian distribution parameters
-        mean = num_discoms / 2  # Center of distribution
+        mean = (num_discoms - 1) / 2  # Center of distribution
         std_dev = max(1, num_discoms / 4)  # Controls variance
 
-        # Generate a random number of DISCOMs to assign (min 1, max all)
-        num_to_assign = int(np.clip(np.random.normal(mean, std_dev), 1, num_discoms))
+        # Ensure at least 1 discom is selected
+        num_to_assign = max(1, int(np.clip(np.random.normal(mean, std_dev), 1, num_discoms)))
 
-        # Select that many DISCOMs
-        STATE_DISCOM_MAP[state] = random.sample(source_discoms, num_to_assign)
-
+        # Select discoms based on Gaussian probability
+        STATE_DISCOM_MAP[state] = random.sample(source_discoms, min(num_to_assign, num_discoms))
 
 # Combine state and UT districts
 DISTRICTS = {}
@@ -603,7 +606,6 @@ for _ in range(num_records):
     gender = random.choices(gender_options, weights=gender_weights, k=1)[0]
     dates = generate_dates_sequence()
     registration_date = dates["registration_date"]
-    discom_name = assign_discoms_gaussian()
 
     # Helper function to format dates safely
     def format_date_safely(date_obj):
@@ -620,7 +622,7 @@ for _ in range(num_records):
         "District": district,
         "Date Of Birth": date_of_birth.strftime('%Y-%m-%d'),
         "CA Number": generate_unique_9digit_ca_number(),
-        "Discom Name": discom_name,
+        "Discom Name": assign_discoms_gaussian(),
         "Email Address": generate_email(consumer_first_name, consumer_last_name),
         "Registration Date": registration_date.strftime('%Y-%m-%d'),
         "Acceptance Status": acceptance_status,

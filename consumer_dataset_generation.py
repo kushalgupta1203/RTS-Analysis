@@ -6,6 +6,7 @@ import random
 from datetime import datetime, timedelta
 from faker import Faker
 import string
+from collections import defaultdict
 
 print(f"Your dataset is under generation...")
 
@@ -238,30 +239,52 @@ ACCEPTANCE_RATIOS = {
     "Jammu and Kashmir": 0.35, "Ladakh": 0.38, "Lakshadweep": 0.26, "Puducherry": 0.39
 }
 
-def assign_discoms_gaussian():
-    for state, discoms in STATE_DISCOM_MAP.items():
-        if not discoms:  # Case 1: No DISCOMs → Assign from NATIONAL_DISCOMS
-            source_discoms = NATIONAL_DISCOMS
-        else:  # Case 2: State has DISCOMs → Use its own list
-            source_discoms = discoms
 
+
+# Dictionary to track the count of each DISCOM's selection
+discom_selection_count = defaultdict(lambda: defaultdict(int))
+
+def assign_discoms_gaussian(state):
+    if state in STATE_DISCOM_MAP and STATE_DISCOM_MAP[state]:  
+        source_discoms = STATE_DISCOM_MAP[state]
         num_discoms = len(source_discoms)
 
-        if num_discoms == 0:  # Prevent empty assignments
-            STATE_DISCOM_MAP[state] = NATIONAL_DISCOMS
-            continue
+        if num_discoms == 1:
+            return source_discoms[0]  # If only one DISCOM, return it
 
-        # Gaussian distribution parameters
         mean = (num_discoms - 1) / 2  # Center of distribution
         std_dev = max(1, num_discoms / 4)  # Controls variance
 
-        # Ensure at least 1 discom is selected
-        num_to_assign = max(1, int(np.clip(np.random.normal(mean, std_dev), 1, num_discoms)))
+        # Assign weights based on Gaussian probability
+        weights = [np.exp(-((i - mean) ** 2) / (2 * std_dev ** 2)) for i in range(num_discoms)]
+        total_weight = sum(weights)
+        weights = [w / total_weight for w in weights]
 
-        # Select discoms based on Gaussian probability
-        STATE_DISCOM_MAP[state] = random.sample(source_discoms, min(num_to_assign, num_discoms))
+        # **Modify selection to reduce repetition**
+        # Adjust weights based on how many times a DISCOM has already been selected
+        adjusted_weights = [
+            w / (1 + discom_selection_count[state][source_discoms[i]])  # Penalize already selected DISCOMs
+            for i, w in enumerate(weights)
+        ]
 
-assign_discoms_gaussian()
+        # Normalize the adjusted weights
+        total_adjusted_weight = sum(adjusted_weights)
+        adjusted_weights = [w / total_adjusted_weight for w in adjusted_weights]
+
+        # Select **one** DISCOM with the adjusted probability
+        selected_discom = random.choices(source_discoms, weights=adjusted_weights, k=1)[0]
+
+        # Update the selection count
+        discom_selection_count[state][selected_discom] += 1  
+
+        return selected_discom
+
+    else:  
+        # If state not found, pick from NATIONAL_DISCOMS with (0.27, 0.73) probability
+        return random.choices(NATIONAL_DISCOMS, weights=[0.27, 0.73], k=1)[0]
+
+
+
 
 # Combine state and UT districts
 DISTRICTS = {}
@@ -290,28 +313,48 @@ def get_random_district_gaussian(state):
     else:
         return None
 
+
+import numpy as np
+import random
+from collections import defaultdict
+
+# Track selection frequency
+solar_org_selection_count = defaultdict(int)
+
 def get_solar_organizations_gaussian():
     num_orgs = len(SOLAR_ORGANIZATIONS)
-
     if num_orgs == 0:
-        return []
+        return None  # Return None if there are no organizations
 
-    # Gaussian distribution parameters
     mean = (num_orgs - 1) / 2  # Center of distribution
-    std_dev = max(1, num_orgs / 4)  # Controls variance (adjustable)
+    std_dev = max(1, num_orgs / 4)  # Controls variance
 
-    # Assign weights using a Gaussian-like curve
-    weights = [np.exp(-((i - mean) ** 2) / (2 * std_dev ** 2)) for i in range(num_orgs)]
+    # Assign initial weights using a Gaussian-like curve
+    base_weights = [np.exp(-((i - mean) ** 2) / (2 * std_dev ** 2)) for i in range(num_orgs)]
 
-    # Normalize weights to sum to 1
-    total_weight = sum(weights)
-    weights = [w / total_weight for w in weights]
+    # Normalize weights
+    total_weight = sum(base_weights)
+    base_weights = [w / total_weight for w in base_weights]
 
-    # Determine how many organizations to select (using Gaussian)
-    num_to_assign = int(np.clip(np.random.normal(mean, std_dev), 1, num_orgs))
+    # Adjust weights based on selection count to ensure variation
+    adjusted_weights = [
+        w / (1 + solar_org_selection_count[SOLAR_ORGANIZATIONS[i]])  
+        for i, w in enumerate(base_weights)
+    ]
 
-    # Select organizations without replacement based on weights
-    return random.choices(SOLAR_ORGANIZATIONS, weights=weights, k=num_to_assign)
+    # Normalize adjusted weights
+    total_adjusted_weight = sum(adjusted_weights)
+    adjusted_weights = [w / total_adjusted_weight for w in adjusted_weights]
+
+    # **Select one organization based on adjusted probability**
+    selected_org = random.choices(SOLAR_ORGANIZATIONS, weights=adjusted_weights, k=1)[0]
+
+    # **Update selection count**
+    solar_org_selection_count[selected_org] += 1  
+
+    return selected_org
+
+
 
 # Helper functions
 def random_date(start_date, end_date):
@@ -583,7 +626,7 @@ combined_weight_values = [combined_weights[state] for state in combined_state_li
 
 
 # --- Data Generation ---
-num_records = 532
+num_records = 1048532
 data = []
 
 # --- Data Generation Loop ---
@@ -626,7 +669,7 @@ for _ in range(num_records):
         "District": district,
         "Date Of Birth": date_of_birth.strftime('%Y-%m-%d'),
         "CA Number": generate_unique_9digit_ca_number(),
-        "Discom Name": STATE_DISCOM_MAP,
+        "Discom Name": assign_discoms_gaussian(state),
         "Email Address": generate_email(consumer_first_name, consumer_last_name),
         "Registration Date": registration_date.strftime('%Y-%m-%d'),
         "Acceptance Status": acceptance_status,
@@ -652,5 +695,6 @@ df = pd.DataFrame(data)
 
 # Export to CSV
 df.to_csv("consumer_application_data.csv", index=False)
+
 
 print("Data generation complete. CSV file created: consumer_application_data.csv")

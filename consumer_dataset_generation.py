@@ -236,9 +236,25 @@ ACCEPTANCE_RATIOS = {
     "Jammu and Kashmir": 0.35, "Ladakh": 0.38, "Lakshadweep": 0.26, "Puducherry": 0.39
 }
 
-for state, discoms in STATE_DISCOM_MAP.items():
-    if not discoms:
-        STATE_DISCOM_MAP[state] = NATIONAL_DISCOMS
+def assign_discoms_gaussian():
+    for state, discoms in STATE_DISCOM_MAP.items():
+        if not discoms:  # Case 1: No DISCOMs → Assign from NATIONAL_DISCOMS
+            source_discoms = NATIONAL_DISCOMS
+        else:  # Case 2: State has DISCOMs → Use its own list
+            source_discoms = discoms
+
+        num_discoms = len(source_discoms)
+
+        # Gaussian distribution parameters
+        mean = num_discoms / 2  # Center of distribution
+        std_dev = max(1, num_discoms / 4)  # Controls variance
+
+        # Generate a random number of DISCOMs to assign (min 1, max all)
+        num_to_assign = int(np.clip(np.random.normal(mean, std_dev), 1, num_discoms))
+
+        # Select that many DISCOMs
+        STATE_DISCOM_MAP[state] = random.sample(source_discoms, num_to_assign)
+
 
 # Combine state and UT districts
 DISTRICTS = {}
@@ -248,7 +264,17 @@ DISTRICTS.update(UNION_TERRITORY_DISTRICTS)
 # Function to select a random district for a given state/UT
 def get_random_district(state):
     if state in DISTRICTS and DISTRICTS[state]:
-        return random.choice(DISTRICTS[state])
+        districts = DISTRICTS[state]
+        num_districts = len(districts)
+
+        # Gaussian distribution parameters
+        mean = (num_districts - 1) / 2  # Center of distribution
+        std_dev = max(1, num_districts / 4)  # Controls variance (adjustable)
+
+        # Generate a random index using Gaussian distribution
+        index = int(np.clip(np.random.normal(mean, std_dev), 0, num_districts - 1))
+
+        return districts[index]
     else:
         return None
 
@@ -549,7 +575,7 @@ for _ in range(num_records):
     gender = random.choices(gender_options, weights=gender_weights, k=1)[0]
     dates = generate_dates_sequence()
     registration_date = dates["registration_date"]
-    discom_name = random.choice(STATE_DISCOM_MAP[state])
+    discom_name = assign_discoms_gaussian()
 
     # Helper function to format dates safely
     def format_date_safely(date_obj):

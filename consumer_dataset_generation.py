@@ -262,21 +262,49 @@ DISTRICTS.update(STATE_DISTRICTS)
 DISTRICTS.update(UNION_TERRITORY_DISTRICTS)
 
 # Function to select a random district for a given state/UT
-def get_random_district(state):
+def get_random_district_gaussian(state):
     if state in DISTRICTS and DISTRICTS[state]:
         districts = DISTRICTS[state]
         num_districts = len(districts)
 
-        # Gaussian distribution parameters
+        # Generate weights using a Gaussian-like curve
         mean = (num_districts - 1) / 2  # Center of distribution
         std_dev = max(1, num_districts / 4)  # Controls variance (adjustable)
 
-        # Generate a random index using Gaussian distribution
-        index = int(np.clip(np.random.normal(mean, std_dev), 0, num_districts - 1))
+        # Assign weights based on normal distribution probability
+        weights = [np.exp(-((i - mean) ** 2) / (2 * std_dev ** 2)) for i in range(num_districts)]
 
-        return districts[index]
+        # Normalize weights so they sum to 1
+        total_weight = sum(weights)
+        weights = [w / total_weight for w in weights]
+
+        # Select a district based on weighted probability
+        return random.choices(districts, weights=weights, k=1)[0]
     else:
         return None
+
+def get_solar_organizations_gaussian():
+    num_orgs = len(SOLAR_ORGANIZATIONS)
+
+    if num_orgs == 0:
+        return []
+
+    # Gaussian distribution parameters
+    mean = (num_orgs - 1) / 2  # Center of distribution
+    std_dev = max(1, num_orgs / 4)  # Controls variance (adjustable)
+
+    # Assign weights using a Gaussian-like curve
+    weights = [np.exp(-((i - mean) ** 2) / (2 * std_dev ** 2)) for i in range(num_orgs)]
+
+    # Normalize weights to sum to 1
+    total_weight = sum(weights)
+    weights = [w / total_weight for w in weights]
+
+    # Determine how many organizations to select (using Gaussian)
+    num_to_assign = int(np.clip(np.random.normal(mean, std_dev), 1, num_orgs))
+
+    # Select organizations without replacement based on weights
+    return random.choices(SOLAR_ORGANIZATIONS, weights=weights, k=num_to_assign)
 
 # Helper functions
 def random_date(start_date, end_date):
@@ -571,7 +599,7 @@ for _ in range(num_records):
     guardian_first_name = fake.first_name()
 
     date_of_birth = random_dob()
-    district = get_random_district(state)
+    district = get_random_district_gaussian(state)
     gender = random.choices(gender_options, weights=gender_weights, k=1)[0]
     dates = generate_dates_sequence()
     registration_date = dates["registration_date"]
@@ -601,7 +629,7 @@ for _ in range(num_records):
         "Application Approved Date": format_date_safely(dates["approval_date"]) if is_accepted else "Declined",
         "Vendor First Name": fake.first_name(),
         "Vendor Last Name": fake.last_name(),
-        "Vendor Organization": random.choice(SOLAR_ORGANIZATIONS),
+        "Vendor Organization": get_solar_organizations_gaussian(),
         "Vendor Selection Date": format_date_safely(dates["vendor_selection_date"]) if is_accepted else "Declined",
         "Vendor Acceptance Date": format_date_safely(dates["vendor_acceptance_date"]) if is_accepted else "Declined",
         "Installation Date": format_date_safely(dates["installation_date"]) if is_accepted else "Declined",

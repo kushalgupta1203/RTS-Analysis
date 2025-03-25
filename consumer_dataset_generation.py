@@ -583,7 +583,7 @@ combined_weight_values = [combined_weights[state] for state in combined_state_li
 
 
 # --- Data Generation ---
-num_records = 1048532
+num_records = 532
 data = []
 
 # --- Data Generation Loop ---

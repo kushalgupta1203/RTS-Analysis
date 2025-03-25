@@ -387,12 +387,12 @@ def generate_dates_sequence():
     # Maximum time gaps between steps (in days)
     max_gaps = {
         "approval": 15,
-        "vendor_selection": 30,
+        "vendor_selection": 15,
         "vendor_acceptance": 7,
         "installation": 45,
         "inspection": 15,
         "claim_submission": 10,
-        "claim_release": 120
+        "claim_release": 60
     }
     
     # Initialize all dates as None (pending)
@@ -522,9 +522,10 @@ combined_weight_values = [combined_weights[state] for state in combined_state_li
 
 
 # --- Data Generation ---
-num_records = 1087654
+num_records = 1048532
 data = []
 
+# --- Data Generation Loop ---
 # --- Data Generation Loop ---
 for _ in range(num_records):
     # Select state using combined weights
@@ -570,17 +571,17 @@ for _ in range(num_records):
         "Registration Date": registration_date.strftime('%Y-%m-%d'),
         "Acceptance Status": acceptance_status,
         "Production Capacity (KW)": assign_production_capacity(),
-        "Application Approved Date": format_date_safely(dates["approval_date"]),
         "Application Number": generate_unique_application_number(),
+        "Application Approved Date": format_date_safely(dates["approval_date"]) if is_accepted else "Declined",
         "Vendor First Name": fake.first_name(),
         "Vendor Last Name": fake.last_name(),
         "Vendor Organization": random.choice(SOLAR_ORGANIZATIONS),
-        "Vendor Selection Date": format_date_safely(dates["vendor_selection_date"]),
-        "Vendor Acceptance Date": format_date_safely(dates["vendor_acceptance_date"]),
-        "Installation Date": format_date_safely(dates["installation_date"]),
-        "Inspection Date": format_date_safely(dates["inspection_date"]),
-        "Subsidy Redeemed Date": format_date_safely(dates["claim_submission_date"]),
-        "Subsidy Released Date": format_date_safely(dates["claim_release_date"]),
+        "Vendor Selection Date": format_date_safely(dates["vendor_selection_date"]) if is_accepted else "Declined",
+        "Vendor Acceptance Date": format_date_safely(dates["vendor_acceptance_date"]) if is_accepted else "Declined",
+        "Installation Date": format_date_safely(dates["installation_date"]) if is_accepted else "Declined",
+        "Inspection Date": format_date_safely(dates["inspection_date"]) if is_accepted else "Declined",
+        "Subsidy Redeemed Date": format_date_safely(dates["claim_submission_date"]) if is_accepted else "Declined",
+        "Subsidy Released Date": format_date_safely(dates["claim_release_date"]) if is_accepted else "Declined",
     }
     
     data.append(record)

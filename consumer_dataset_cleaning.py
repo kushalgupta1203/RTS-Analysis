@@ -1,5 +1,7 @@
 import pandas as pd
 
+print(f"Your dataset is getting cleaned...")
+
 # Define file locations
 input_file = r"D:\Projects\RTS Analysis\consumer_application_data.csv"
 output_file = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"

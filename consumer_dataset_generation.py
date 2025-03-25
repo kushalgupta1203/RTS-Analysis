@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from faker import Faker
 import string
 
+print(f"Your dataset is under generation...")
+
 # Set a seed for reproducibility
 np.random.seed(42)
 random.seed(42)

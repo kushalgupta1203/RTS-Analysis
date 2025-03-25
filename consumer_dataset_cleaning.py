@@ -17,5 +17,5 @@ columns_to_extract = [
 df = pd.read_csv(input_file, usecols=columns_to_extract)
 
 # Save extracted data to a new Excel file
-df.to_excel(output_file, index=False)
+df.to_csv(output_file, index=False)
 print(f"Preprocessed data saved to: {output_file}")

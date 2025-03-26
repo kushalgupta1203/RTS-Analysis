@@ -9,7 +9,7 @@ def calculate_days(start_date, end_date):
         if start_date == "declined" or end_date == "declined":
             return "N/A"
         if start_date == "pending" or end_date == "pending":
-            return "pending"
+            return "Pending"
         
         try:
             start_dt = datetime.strptime(start_date, "%d-%m-%Y")
@@ -34,14 +34,17 @@ def preprocess_data(input_file, output_file):
     # Strip whitespace from all string columns
     df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
     
+    # Apply processing only if application status is accepted
+    accepted_mask = df["Acceptance Status"].str.lower() == "accepted"
+    
     # Creating new columns for phase durations
-    df["Registration to Approval Days"] = df.apply(lambda row: calculate_days(row["Registration Date"], row["Application Approved Date"]), axis=1)
-    df["Approval to Vendor Selection Days"] = df.apply(lambda row: calculate_days(row["Application Approved Date"], row["Vendor Selection Date"]), axis=1)
-    df["Vendor Selection to Acceptance Days"] = df.apply(lambda row: calculate_days(row["Vendor Selection Date"], row["Vendor Acceptance Date"]), axis=1)
-    df["Acceptance to Installation Days"] = df.apply(lambda row: calculate_days(row["Vendor Acceptance Date"], row["Installation Date"]), axis=1)
-    df["Installation to Inspection Days"] = df.apply(lambda row: calculate_days(row["Installation Date"], row["Inspection Date"]), axis=1)
-    df["Inspection to Subsidy Redeemed Days"] = df.apply(lambda row: calculate_days(row["Inspection Date"], row["Subsidy Redeemed Date"]), axis=1)
-    df["Subsidy Redeemed to Released Days"] = df.apply(lambda row: calculate_days(row["Subsidy Redeemed Date"], row["Subsidy Released Date"]), axis=1)
+    df.loc[accepted_mask, "Registration to Approval Days"] = df.apply(lambda row: calculate_days(row["Registration Date"], row["Application Approved Date"]), axis=1)
+    df.loc[accepted_mask, "Approval to Vendor Selection Days"] = df.apply(lambda row: calculate_days(row["Application Approved Date"], row["Vendor Selection Date"]), axis=1)
+    df.loc[accepted_mask, "Vendor Selection to Acceptance Days"] = df.apply(lambda row: calculate_days(row["Vendor Selection Date"], row["Vendor Acceptance Date"]), axis=1)
+    df.loc[accepted_mask, "Acceptance to Installation Days"] = df.apply(lambda row: calculate_days(row["Vendor Acceptance Date"], row["Installation Date"]), axis=1)
+    df.loc[accepted_mask, "Installation to Inspection Days"] = df.apply(lambda row: calculate_days(row["Installation Date"], row["Inspection Date"]), axis=1)
+    df.loc[accepted_mask, "Inspection to Subsidy Redeemed Days"] = df.apply(lambda row: calculate_days(row["Inspection Date"], row["Subsidy Redeemed Date"]), axis=1)
+    df.loc[accepted_mask, "Subsidy Redeemed to Released Days"] = df.apply(lambda row: calculate_days(row["Subsidy Redeemed Date"], row["Subsidy Released Date"]), axis=1)
     
     # Apply N/A for rejected applications
     rejected_mask = df["Acceptance Status"].str.lower() == "rejected"

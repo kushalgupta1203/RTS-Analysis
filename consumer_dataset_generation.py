@@ -374,8 +374,26 @@ def random_dob():
 import random
 from datetime import datetime, timedelta
 
+def skewed_gaussian_gap(stage, ranges, weights):
+    """Generate gap using skewed Gaussian distribution based on provided ranges and weights."""
+    # Normalize weights to sum up to 1
+    total_weight = sum(weights)
+    probabilities = [w / total_weight for w in weights]
+
+    # Select a range based on weights
+    selected_range = random.choices(ranges, weights=probabilities)[0]
+    
+    # Generate a skewed Gaussian value within the selected range
+    mean = (selected_range[0] + selected_range[1]) / 2
+    std_dev = (selected_range[1] - selected_range[0]) / 6  # Adjust standard deviation for tighter distribution
+    
+    while True:
+        gap = int(random.gauss(mean, std_dev))
+        if selected_range[0] <= gap < selected_range[1]:  # Ensure value falls within the selected range
+            return gap
+
 def gaussian_gap(min_gap, max_gap, stage=None):
-    """Generate gap using a distribution based on provided ratios, clamped within specified range."""
+    """Generate gap using skewed Gaussian distribution based on provided ratios."""
     ratios = {
         "approval": [78.44, 17.17, 4.39, 0, 0],
         "vendor_selection": [74.1, 24.2, 1.7, 0, 0],
@@ -384,22 +402,13 @@ def gaussian_gap(min_gap, max_gap, stage=None):
         "inspection": [22.46, 47.44, 18.10, 7.66, 0.34],  
         "claim_submission": [16.06, 37.66, 30.28, 5.70, 0.30],  
         "claim_release": [15.41, 43.86, 22.73, 4.20, 1.80] 
-}
+    }
 
     if stage in ratios:
         ranges = [(1, 15), (16, 30), (31, 60), (61, 120), (121, max_gap + 1)]
         weights = ratios[stage]
         
-        # Normalize weights to sum up to 1
-        total_weight = sum(weights)
-        probabilities = [w / total_weight for w in weights]
-        
-        # Select a range based on weights
-        selected_range = random.choices(ranges, weights=probabilities, k=1)[0]
-        
-        # Generate a random value within the selected range
-        gap = random.randint(selected_range[0], selected_range[1] - 1)
-        return gap
+        return skewed_gaussian_gap(stage=stage, ranges=ranges, weights=weights)
     else:
         # Default Gaussian distribution if not defined stage
         mean = (min_gap + max_gap) / 2
@@ -444,23 +453,23 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
     registration_date = datetime(year, month, day)
 
     min_gaps = {
-        "approval": 1,
-        "vendor_selection": 7,
-        "vendor_acceptance": 7,
-        "installation": 7,
-        "inspection": 7,
-        "claim_submission": 7,
-        "claim_release": 7
+        "approval": 1, 
+        "vendor_selection": 1,
+        "vendor_acceptance": 1,
+        "installation": 1,
+        "inspection": 1,
+        "claim_submission": 1,
+        "claim_release": 1
     }
     
     max_gaps = {
-        "approval":180,
-        "vendor_selection":180,
-        "vendor_acceptance":180,
-        "installation":180,
-        "inspection":180,
-        "claim_submission":180,
-        "claim_release":180
+        "approval": 180,
+        "vendor_selection": 180,
+        "vendor_acceptance": 180,
+        "installation": 180,
+        "inspection": 180,
+        "claim_submission": 180,
+        "claim_release": 180
     }
 
     approval_date = None
@@ -476,7 +485,7 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
     current_max_gap = min(max_gaps["approval"], remaining_days)
 
     if current_max_gap >= min_gaps["approval"]:
-        approval_date = registration_date + timedelta(days=gaussian_gap(min_gaps["approval"], current_max_gap))
+        approval_date = registration_date + timedelta(days=gaussian_gap(min_gaps["approval"], current_max_gap, stage="approval"))
 
     if approval_date and approval_date <= END_DATE:
         
@@ -485,7 +494,7 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
         current_max_gap = min(max_gaps["vendor_selection"], remaining_days)
 
         if current_max_gap >= min_gaps["vendor_selection"]:
-            vendor_selection_date = approval_date + timedelta(days=gaussian_gap(min_gaps["vendor_selection"], current_max_gap))
+            vendor_selection_date = approval_date + timedelta(days=gaussian_gap(min_gaps["vendor_selection"], current_max_gap, stage="vendor_selection"))
 
             if vendor_selection_date and vendor_selection_date <= END_DATE:
                 
@@ -494,7 +503,7 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
                 current_max_gap = min(max_gaps["vendor_acceptance"], remaining_days)
 
                 if current_max_gap >= min_gaps["vendor_acceptance"]:
-                    vendor_acceptance_date = vendor_selection_date + timedelta(days=gaussian_gap(min_gaps["vendor_acceptance"], current_max_gap))
+                    vendor_acceptance_date = vendor_selection_date + timedelta(days=gaussian_gap(min_gaps["vendor_acceptance"], current_max_gap, stage="vendor_acceptance"))
 
                     if vendor_acceptance_date and vendor_acceptance_date <= END_DATE:
                         
@@ -503,7 +512,7 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
                         current_max_gap = min(max_gaps["installation"], remaining_days)
 
                         if current_max_gap >= min_gaps["installation"]:
-                            installation_date = vendor_acceptance_date + timedelta(days=gaussian_gap(min_gaps["installation"], current_max_gap))
+                            installation_date = vendor_acceptance_date + timedelta(days=gaussian_gap(min_gaps["installation"], current_max_gap, stage="installation"))
 
                             if installation_date and installation_date <= END_DATE:
                                 
@@ -512,7 +521,7 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
                                 current_max_gap = min(max_gaps["inspection"], remaining_days)
 
                                 if current_max_gap >= min_gaps["inspection"]:
-                                    inspection_date = installation_date + timedelta(days=gaussian_gap(min_gaps["inspection"], current_max_gap))
+                                    inspection_date = installation_date + timedelta(days=gaussian_gap(min_gaps["inspection"], current_max_gap, stage="inspection"))
 
                                     if inspection_date and inspection_date <= END_DATE:
                                         
@@ -521,7 +530,7 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
                                         current_max_gap = min(max_gaps["claim_submission"], remaining_days)
 
                                         if current_max_gap >= min_gaps["claim_submission"]:
-                                            claim_submission_date = inspection_date + timedelta(days=gaussian_gap(min_gaps["claim_submission"], current_max_gap))
+                                            claim_submission_date = inspection_date + timedelta(days=gaussian_gap(min_gaps["claim_submission"], current_max_gap, stage="claim_submission"))
 
                                             if claim_submission_date and claim_submission_date <= END_DATE:
                                                 
@@ -530,7 +539,7 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
                                                 current_max_gap = min(max_gaps["claim_release"], remaining_days)
 
                                                 if current_max_gap >= min_gaps["claim_release"]:
-                                                    claim_release_date = claim_submission_date + timedelta(days=gaussian_gap(min_gaps["claim_release"], current_max_gap))
+                                                    claim_release_date = claim_submission_date + timedelta(days=gaussian_gap(min_gaps["claim_release"], current_max_gap, stage="claim_release"))
                                                     if claim_release_date > END_DATE:
                                                         claim_release_date = None
 
@@ -546,6 +555,10 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
     }
     
     return result
+
+
+
+
 
 
 START_DATE = datetime.strptime('01-01-2024', '%d-%m-%Y')

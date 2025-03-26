@@ -371,15 +371,45 @@ def random_dob():
 
 
 
-def gaussian_gap(min_gap, max_gap):
-    """Simulate a gap using a Gaussian distribution within the specified range."""
-    # Placeholder for actual Gaussian calculation logic
-    return random.randint(min_gap, max_gap)
+
+def gaussian_gap(min_gap, max_gap, stage=None):
+    """Generate gap using a distribution based on provided ratios, clamped within specified range."""
+
+    ratios = {
+        "approval": [56.92, 6.98, 10.57, 13.16, 9.77],
+        "vendor_selection": [14.10, 14.20, 20.70, 26.80, 24.20],
+        "vendor_acceptance": [14.20, 14.10, 26.80, 20.70, 24.20],
+        "installation": [11.03, 14.75, 26.60, 29.56, 16.85],
+        "inspection": [12.22, 15.84, 25.92, 28.80, 17.22],
+        "claim_submission": [12.22, 17.22, 28.80, 25.92, 15.84],
+        "claim_release": [11.03, 16.85, 29.56, 26.60, 14.75]
+    }
+
+    if stage in ratios:
+        ranges = [(0, 15), (16, 30), (31, 60), (61, 120), (121, max_gap+1)]
+        weights = ratios[stage]
+        
+        # Normalize weights to sum up to 1
+        total_weight = sum(weights)
+        probabilities = [w / total_weight for w in weights]
+        
+        # Select a range based on weights
+        selected_range = random.choices(ranges, weights=probabilities, k=1)[0]
+        
+        # Generate a random value within the selected range
+        gap = random.randint(selected_range[0], selected_range[1]-1)
+        return gap
+    else:
+        # Default Gaussian distribution if not the any defined stage
+        mean = (min_gap + max_gap) / 2
+        std_dev = (max_gap - min_gap) / 6
+        gap = random.gauss(mean, std_dev)
+        clamped_gap = int(round(max(min_gap, min(gap, max_gap))))
+        return clamped_gap
 
 def generate_dates_sequence():
-    """Generate a sequence of dates for the solar application process with monthly distribution."""
-    
-    # Select month based on specified distribution
+    """Generate sequence of dates for the solar application process with monthly distribution."""
+    # [Rest of your original function]
     month_weights = {
         1: 0.03,   # January - minimum
         2: 0.05,
@@ -410,47 +440,47 @@ def generate_dates_sequence():
     registration_date = datetime(year, month, day)
 
     min_gaps = {
-        "approval": 3,
-        "vendor_selection": 5,
-        "vendor_acceptance": 2,
-        "installation": 10,
-        "inspection": 5,
-        "claim_submission": 3,
+        "approval": 0,
+        "vendor_selection": 7,
+        "vendor_acceptance": 7,
+        "installation": 15,
+        "inspection": 15,
+        "claim_submission": 15,
         "claim_release": 30
     }
     
     max_gaps = {
-        "approval": 15,
-        "vendor_selection": 15,
-        "vendor_acceptance": 7,
-        "installation": 45,
-        "inspection": 15,
-        "claim_submission": 30,
+        "approval": 120,
+        "vendor_selection": 120,
+        "vendor_acceptance": 60,
+        "installation": 120,
+        "inspection": 90,
+        "claim_submission": 90,
         "claim_release": 180
     }
     
-    approval_date = registration_date + timedelta(days=gaussian_gap(min_gaps["approval"], max_gaps["approval"]))
+    approval_date = registration_date + timedelta(days=gaussian_gap(min_gaps["approval"], max_gaps["approval"], "approval"))
 
     if approval_date <= END_DATE:
-        vendor_selection_date = approval_date + timedelta(days=gaussian_gap(min_gaps["vendor_selection"], max_gaps["vendor_selection"]))
+        vendor_selection_date = approval_date + timedelta(days=gaussian_gap(min_gaps["vendor_selection"], max_gaps["vendor_selection"], "vendor_selection"))
         
         if vendor_selection_date <= END_DATE:
-            vendor_acceptance_date = vendor_selection_date + timedelta(days=gaussian_gap(min_gaps["vendor_acceptance"], max_gaps["vendor_acceptance"]))
+            vendor_acceptance_date = vendor_selection_date + timedelta(days=gaussian_gap(min_gaps["vendor_acceptance"], max_gaps["vendor_acceptance"], "vendor_acceptance"))
             
             if vendor_acceptance_date <= END_DATE:
-                installation_date = vendor_acceptance_date + timedelta(days=gaussian_gap(min_gaps["installation"], max_gaps["installation"]))
+                installation_date = vendor_acceptance_date + timedelta(days=gaussian_gap(min_gaps["installation"], max_gaps["installation"], "installation"))
 
                 remaining_days = (END_DATE - vendor_acceptance_date).days
                 installation_chance = min(1.0, remaining_days / (max_gaps["installation"] * 1.5))
                 
                 if installation_date <= END_DATE and random.random() < installation_chance:
-                    inspection_date = installation_date + timedelta(days=gaussian_gap(min_gaps["inspection"], max_gaps["inspection"]))
+                    inspection_date = installation_date + timedelta(days=gaussian_gap(min_gaps["inspection"], max_gaps["inspection"], "inspection"))
                     
                     if inspection_date <= END_DATE:
-                        claim_submission_date = inspection_date + timedelta(days=gaussian_gap(min_gaps["claim_submission"], max_gaps["claim_submission"]))
+                        claim_submission_date = inspection_date + timedelta(days=gaussian_gap(min_gaps["claim_submission"], max_gaps["claim_submission"], "claim_submission"))
 
                         if claim_submission_date <= END_DATE:
-                            claim_release_date = claim_submission_date + timedelta(days=gaussian_gap(min_gaps["claim_release"], max_gaps["claim_release"]))
+                            claim_release_date = claim_submission_date + timedelta(days=gaussian_gap(min_gaps["claim_release"], max_gaps["claim_release"], "claim_release"))
 
                             remaining_days = (END_DATE - claim_submission_date).days
                             release_chance = min(0.95, remaining_days / max_gaps["claim_release"])

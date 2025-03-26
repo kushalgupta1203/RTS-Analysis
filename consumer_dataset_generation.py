@@ -314,41 +314,51 @@ def get_random_district_gaussian(state):
         return None
 
 
-# Track selection frequency
+# Track how many times each organization has been selected
 solar_org_selection_count = defaultdict(int)
 
-def get_solar_organizations_gaussian():
+def get_solar_organization_gaussian():
     num_orgs = len(SOLAR_ORGANIZATIONS)
     if num_orgs == 0:
-        return None  # Return None if no organizations exist
+        return None  # Return None if there are no organizations
 
     mean = (num_orgs - 1) / 2  # Center of Gaussian distribution
-    std_dev = max(1, num_orgs / 3)  # Slightly larger spread for more variance
+    std_dev = max(1, num_orgs / 3)  # Spread factor for more variance
 
-    # Assign initial weights using a Gaussian curve
+    # Base Gaussian weights
     base_weights = [np.exp(-((i - mean) ** 2) / (2 * std_dev ** 2)) for i in range(num_orgs)]
-
+    
     # Normalize weights
     total_weight = sum(base_weights)
     base_weights = [w / total_weight for w in base_weights]
 
-    # Adjust weights to introduce **higher variance** in selection
-    adjusted_weights = [
-        w / (1 + np.exp(0.5 * solar_org_selection_count[SOLAR_ORGANIZATIONS[i]]) + random.uniform(0, 0.3))  
-        for i, w in enumerate(base_weights)
-    ]
+    # Apply frequency-based adjustment (Prevent overflow)
+    adjusted_weights = []
+    for i, w in enumerate(base_weights):
+        count = solar_org_selection_count[SOLAR_ORGANIZATIONS[i]]
+
+        # **Fix: Use logarithmic growth instead of pure exponential**
+        adjustment_factor = 1 + np.log1p(count) + random.uniform(0, 0.1)  # log1p(x) = log(1 + x)
+
+        new_weight = w / adjustment_factor
+        adjusted_weights.append(new_weight)
 
     # Normalize adjusted weights
     total_adjusted_weight = sum(adjusted_weights)
+    if total_adjusted_weight == 0 or not np.isfinite(total_adjusted_weight):
+        adjusted_weights = base_weights  # Fallback to base weights
+        total_adjusted_weight = sum(adjusted_weights)
+
     adjusted_weights = [w / total_adjusted_weight for w in adjusted_weights]
 
-    # Select one organization based on adjusted probability
+    # Select one organization based on adjusted probabilities
     selected_org = random.choices(SOLAR_ORGANIZATIONS, weights=adjusted_weights, k=1)[0]
 
-    # Update selection count (higher weight to frequently picked ones)
+    # Increase selection count (with random variance to increase spread)
     solar_org_selection_count[selected_org] += random.randint(1, 3)  
 
     return selected_org
+
 
 # Helper functions
 def random_date(start_date, end_date):
@@ -623,7 +633,8 @@ combined_weight_values = [combined_weights[state] for state in combined_state_li
 num_records = 1048532
 data = []
 
-# --- Data Generation Loop ---
+
+
 # --- Data Generation Loop ---
 for _ in range(num_records):
     # Select state using combined weights
@@ -652,6 +663,7 @@ for _ in range(num_records):
     def format_date_safely(date_obj):
         return date_obj.strftime('%Y-%m-%d') if date_obj is not None else "Pending"
 
+
     # Generate the rest of the data
     record = {
         "Consumer First Name": consumer_first_name,
@@ -672,7 +684,7 @@ for _ in range(num_records):
         "Application Approved Date": format_date_safely(dates["approval_date"]) if is_accepted else "Declined",
         "Vendor First Name": fake.first_name(),
         "Vendor Last Name": fake.last_name(),
-        "Vendor Organization": get_solar_organizations_gaussian(),
+        "Vendor Organization": get_solar_organization_gaussian(),
         "Vendor Selection Date": format_date_safely(dates["vendor_selection_date"]) if is_accepted else "Declined",
         "Vendor Acceptance Date": format_date_safely(dates["vendor_acceptance_date"]) if is_accepted else "Declined",
         "Installation Date": format_date_safely(dates["installation_date"]) if is_accepted else "Declined",

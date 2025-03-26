@@ -4,11 +4,11 @@ print("Your dataset is under preprocessing phase...")
 
 def calculate_days(start_date, end_date):
     # Convert to string and clean inputs
-    start_str = str(start_date).strip().lower() if pd.notna(start_date) else ""
-    end_str = str(end_date).strip().lower() if pd.notna(end_date) else ""
+    start_str = str(start_date).strip() if pd.notna(start_date) else ""
+    end_str = str(end_date).strip() if pd.notna(end_date) else ""
     
     # Pending check
-    if "pending" in [start_str, end_str]:
+    if "pending" in [start_str.lower(), end_str.lower()]:
         return "Pending"
     
     # Date conversion check
@@ -26,12 +26,12 @@ def calculate_days(start_date, end_date):
 def preprocess_data(input_file, output_file):
     df = pd.read_csv(input_file, dtype=str)
     
-    # Clean data
-    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    # Clean data and standardize statuses to proper capitalization
+    df["Acceptance Status"] = df["Acceptance Status"].str.strip().str.capitalize()
     
-    # Create masks
-    accepted_mask = df["Acceptance Status"].str.lower() == "accepted"
-    rejected_mask = df["Acceptance Status"].str.lower() == "rejected"
+    # Create masks for accepted and rejected statuses
+    accepted_mask = df["Acceptance Status"] == "Accepted"
+    rejected_mask = df["Acceptance Status"] == "Rejected"
     
     # Define date pairs
     date_pairs = [
@@ -59,7 +59,7 @@ def preprocess_data(input_file, output_file):
     df.fillna("NULL", inplace=True)
     
     df.to_csv(output_file, index=False)
-    print(f"Data preprocessing complete. CSV file created: consumer_preprocessed_data.csv")
+    print(f"Data processed successfully. Output: {output_file}")
 
 # File paths
 input_file = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"

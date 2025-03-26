@@ -227,16 +227,16 @@ production_share = {
 
 
 ACCEPTANCE_RATIOS = {
-    "Andhra Pradesh": 0.20, "Arunachal Pradesh": 0.25, "Assam": 0.30, "Bihar": 0.40,
-    "Chhattisgarh": 0.22, "Goa": 0.35, "Gujarat": 0.28, "Haryana": 0.32,
-    "Himachal Pradesh": 0.27, "Jharkhand": 0.38, "Karnataka": 0.29, "Kerala": 0.31,
-    "Madhya Pradesh": 0.33, "Maharashtra": 0.26, "Manipur": 0.39, "Meghalaya": 0.24,
-    "Mizoram": 0.23, "Nagaland": 0.37, "Odisha": 0.34, "Punjab": 0.21,
-    "Rajasthan": 0.40, "Sikkim": 0.36, "Tamil Nadu": 0.25, "Telangana": 0.28,
-    "Tripura": 0.30, "Uttar Pradesh": 0.32, "Uttarakhand": 0.29, "West Bengal": 0.31,
-    "Andaman and Nicobar Islands": 0.22, "Chandigarh": 0.33,
-    "Dadra and Nagar Haveli and Daman and Diu": 0.27, "Delhi": 0.24,
-    "Jammu and Kashmir": 0.35, "Ladakh": 0.38, "Lakshadweep": 0.26, "Puducherry": 0.39
+    "Andhra Pradesh": 0.80, "Arunachal Pradesh": 0.85, "Assam": 0.72, "Bihar": 0.64,
+    "Chhattisgarh": 0.92, "Goa": 0.75, "Gujarat": 0.92, "Haryana": 0.82,
+    "Himachal Pradesh": 0.87, "Jharkhand": 0.78, "Karnataka": 0.79, "Kerala": 0.81,
+    "Madhya Pradesh": 0.83, "Maharashtra": 0.86, "Manipur": 0.79, "Meghalaya": 0.74,
+    "Mizoram": 0.73, "Nagaland": 0.87, "Odisha": 0.84, "Punjab": 0.81,
+    "Rajasthan": 0.87, "Sikkim": 0.86, "Tamil Nadu": 0.85, "Telangana": 0.78,
+    "Tripura": 0.70, "Uttar Pradesh": 0.82, "Uttarakhand": 0.79, "West Bengal": 0.81,
+    "Andaman and Nicobar Islands": 0.62, "Chandigarh": 0.73,
+    "Dadra and Nagar Haveli and Daman and Diu": 0.77, "Delhi": 0.74,
+    "Jammu and Kashmir": 0.85, "Ladakh": 0.88, "Lakshadweep": 0.66, "Puducherry": 0.69
 }
 
 
@@ -470,9 +470,8 @@ def generate_dates_sequence():
                 installation_date = vendor_acceptance_date + timedelta(days=gaussian_gap(min_gaps["installation"], max_gaps["installation"], "installation"))
 
                 remaining_days = (END_DATE - vendor_acceptance_date).days
-                installation_chance = min(1.0, remaining_days / (max_gaps["installation"] * 1.5))
                 
-                if installation_date <= END_DATE and random.random() < installation_chance:
+                if installation_date <= END_DATE:
                     inspection_date = installation_date + timedelta(days=gaussian_gap(min_gaps["inspection"], max_gaps["inspection"], "inspection"))
                     
                     if inspection_date <= END_DATE:
@@ -482,9 +481,8 @@ def generate_dates_sequence():
                             claim_release_date = claim_submission_date + timedelta(days=gaussian_gap(min_gaps["claim_release"], max_gaps["claim_release"], "claim_release"))
 
                             remaining_days = (END_DATE - claim_submission_date).days
-                            release_chance = min(0.95, remaining_days / max_gaps["claim_release"])
                             
-                            if claim_release_date > END_DATE or random.random() >= release_chance:
+                            if claim_release_date > END_DATE:
                                 claim_release_date = None
                         else:
                             claim_release_date = None

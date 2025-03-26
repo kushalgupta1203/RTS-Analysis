@@ -1,55 +1,39 @@
 import pandas as pd
-from datetime import datetime
 
 print("Your dataset is under preprocessing phase...")
 
 def calculate_days(start_date, end_date):
-    if pd.isna(start_date) or pd.isna(end_date):
-        return "N/A"
+    # Convert to string and clean inputs
+    start_str = str(start_date).strip().lower() if pd.notna(start_date) else ""
+    end_str = str(end_date).strip().lower() if pd.notna(end_date) else ""
     
-    if isinstance(start_date, str):
-        start_date = start_date.strip().lower()
-    if isinstance(end_date, str):
-        end_date = end_date.strip().lower()
-    
-    # Check for "pending" status
-    if start_date in ["pending"] or end_date in ["pending"]:
+    # Pending check
+    if "pending" in [start_str, end_str]:
         return "Pending"
-
-    if start_date in ["declined"] or end_date in ["declined"]:
-        return "N/A"
     
+    # Date conversion check
     try:
-        start_dt = pd.to_datetime(start_date, format="%d-%m-%Y", errors='coerce')
-        end_dt = pd.to_datetime(end_date, format="%d-%m-%Y", errors='coerce')
+        start_dt = pd.to_datetime(start_str, format="%d-%m-%Y", errors='coerce')
+        end_dt = pd.to_datetime(end_str, format="%d-%m-%Y", errors='coerce')
+        
         if pd.isna(start_dt) or pd.isna(end_dt):
             return "N/A"
-        
-        # Calculate days INCLUDING both start and end dates
-        days = (end_dt - start_dt).days + 1  # Key change here (+1)
-        return days
-    except Exception as e:
-        print(f"Error calculating days: {e}")
+            
+        return (end_dt - start_dt).days + 1  # Inclusive count
+    except:
         return "N/A"
 
 def preprocess_data(input_file, output_file):
-    
     df = pd.read_csv(input_file, dtype=str)
     
-    # Replace applymap with map for element-wise operation
+    # Clean data
     df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
     
-    date_columns = [
-        "Registration Date", "Application Approved Date", "Vendor Selection Date",
-        "Vendor Acceptance Date", "Installation Date", "Inspection Date",
-        "Subsidy Redeemed Date", "Subsidy Released Date"
-    ]
-    
-    for col in date_columns:
-        df[col] = pd.to_datetime(df[col], format="%d-%m-%Y", errors='coerce')
-    
+    # Create masks
     accepted_mask = df["Acceptance Status"].str.lower() == "accepted"
+    rejected_mask = df["Acceptance Status"].str.lower() == "rejected"
     
+    # Define date pairs
     date_pairs = [
         ("Registration Date", "Application Approved Date", "Registration to Approval Days"),
         ("Application Approved Date", "Vendor Selection Date", "Approval to Vendor Selection Days"),
@@ -60,20 +44,22 @@ def preprocess_data(input_file, output_file):
         ("Subsidy Redeemed Date", "Subsidy Released Date", "Subsidy Redeemed to Released Days")
     ]
     
+    # Process accepted applications
     for start_col, end_col, new_col in date_pairs:
+        df[new_col] = "N/A"  # Default value
         df.loc[accepted_mask, new_col] = df.loc[accepted_mask].apply(
             lambda row: calculate_days(row[start_col], row[end_col]), axis=1
         )
     
-    rejected_mask = df["Acceptance Status"].str.lower() == "rejected"
+    # Set N/A for rejected applications
     new_columns = [col[2] for col in date_pairs]
     df.loc[rejected_mask, new_columns] = "N/A"
     
-    # Replace empty cells with 'NULL'
+    # Handle missing values
     df.fillna("NULL", inplace=True)
-
+    
     df.to_csv(output_file, index=False)
-    print(f"Data generation complete. CSV file created: consumer_preprocessed_data.csv")
+    print(f"Data preprocessing complete. CSV file created: consumer_preprocessed_data.csv")
 
 # File paths
 input_file = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"

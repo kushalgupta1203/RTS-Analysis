@@ -3,37 +3,40 @@ import pandas as pd
 print("Your dataset is under preprocessing phase...")
 
 def calculate_days(start_date, end_date):
-    # Convert to string and clean inputs
+    # Clean inputs
     start_str = str(start_date).strip() if pd.notna(start_date) else ""
     end_str = str(end_date).strip() if pd.notna(end_date) else ""
     
-    # Pending check
+    # Check for "pending"
     if "pending" in [start_str.lower(), end_str.lower()]:
         return "Pending"
     
-    # Date conversion check
+    # Attempt to convert to datetime
     try:
-        start_dt = pd.to_datetime(start_str, format="%d-%m-%Y", errors='coerce')
-        end_dt = pd.to_datetime(end_str, format="%d-%m-%Y", errors='coerce')
+        start_dt = pd.to_datetime(start_str, errors='coerce')
+        end_dt = pd.to_datetime(end_str, errors='coerce')
         
+        # Check for NaT (Not a Time)
         if pd.isna(start_dt) or pd.isna(end_dt):
             return "N/A"
-            
+        
+        # Calculate days difference
         return (end_dt - start_dt).days + 1  # Inclusive count
-    except:
+    except Exception as e:
+        print(f"Error parsing dates: {e}")
         return "N/A"
 
 def preprocess_data(input_file, output_file):
     df = pd.read_csv(input_file, dtype=str)
     
-    # Clean data and standardize statuses to proper capitalization
+    # Clean data and standardize statuses
     df["Acceptance Status"] = df["Acceptance Status"].str.strip().str.capitalize()
     
     # Create masks for accepted and rejected statuses
     accepted_mask = df["Acceptance Status"] == "Accepted"
     rejected_mask = df["Acceptance Status"] == "Rejected"
     
-    # Define date pairs
+    # Define date pairs for calculations
     date_pairs = [
         ("Registration Date", "Application Approved Date", "Registration to Approval Days"),
         ("Application Approved Date", "Vendor Selection Date", "Approval to Vendor Selection Days"),

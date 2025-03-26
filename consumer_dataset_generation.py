@@ -371,17 +371,19 @@ def random_dob():
 
 
 
+import random
+from datetime import datetime, timedelta
+
 def gaussian_gap(min_gap, max_gap, stage=None):
     """Generate gap using a distribution based on provided ratios, clamped within specified range."""
-
     ratios = {
-        "approval": [58.44, 7.17, 10.85, 13.51, 10.03],
-        "vendor_selection": [24.1, 34.2, 30.7, 6.8, 4.2],
-        "vendor_acceptance": [17.75, 38.88, 24.75, 13.75, 4.88],
-        "installation": [11.17, 14.93, 26.93, 29.92, 17.06],
-        "inspection": [22.22, 25.84, 35.92, 8.8, 7.22], 
+        "approval": [78.44, 17.17, 4.39, 0, 0],
+        "vendor_selection": [74.1, 24.2, 1.7, 0, 0],
+        "vendor_acceptance": [27.75, 58.88, 12.75, 0.62, 0],
+        "installation": [1.17, 24.93, 56.93, 15.65, 1.32],
+        "inspection": [19.22, 25.84, 45.92, 8.8, 0.22], 
         "claim_submission": [12.22, 17.22, 8.8, 35.92, 25.84],
-        "claim_release": [11.17, 17.06, 19.8, 26.93, 25.05]
+        "claim_release": [1.17, 7.06, 19.8, 26.93, 45.76]
     }
 
     if stage in ratios:
@@ -396,32 +398,31 @@ def gaussian_gap(min_gap, max_gap, stage=None):
         selected_range = random.choices(ranges, weights=probabilities, k=1)[0]
         
         # Generate a random value within the selected range
-        gap = random.randint(selected_range[0], selected_range[1]-1)
+        gap = random.randint(selected_range[0], selected_range[1] - 1)
         return gap
     else:
-        # Default Gaussian distribution if not the any defined stage
+        # Default Gaussian distribution if not defined stage
         mean = (min_gap + max_gap) / 2
         std_dev = (max_gap - min_gap) / 6
         gap = random.gauss(mean, std_dev)
         clamped_gap = int(round(max(min_gap, min(gap, max_gap))))
         return clamped_gap
 
-def generate_dates_sequence():
+def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
     """Generate sequence of dates for the solar application process with monthly distribution."""
-    # [Rest of your original function]
     month_weights = {
-        1: 0.03,   # January - minimum
+        1: 0.03,
         2: 0.05,
         3: 0.06,
         4: 0.07,
         5: 0.08,
         6: 0.09,
-        7: 0.15,   # July - second highest
+        7: 0.15,
         8: 0.09,
         9: 0.08,
         10: 0.09,
-        11: 0.12,  # November - high
-        12: 0.09   # December - high
+        11: 0.12,
+        12: 0.09
     }
     
     # Select a month based on weights
@@ -432,9 +433,13 @@ def generate_dates_sequence():
     )[0]
     
     # Generate a random day within that month
-    year = 2024
-    max_day = 29 if month == 2 else 30 if month in [4, 6, 9, 11] else 31
-    day = random.randint(1, max_day)
+    year = START_DATE.year
+    max_day = (
+        (29 if month == 2 else 
+         (30 if month in [4,6,9,11] else 
+          (31)))
+    )
+    day = random.randint(1,max_day)
     
     registration_date = datetime(year, month, day)
 
@@ -449,73 +454,86 @@ def generate_dates_sequence():
     }
     
     max_gaps = {
-        "approval": 180,
-        "vendor_selection": 180,
-        "vendor_acceptance": 180,
-        "installation": 180,
-        "inspection": 180,
-        "claim_submission": 180,
-        "claim_release": 180
+        "approval":180,
+        "vendor_selection":180,
+        "vendor_acceptance":180,
+        "installation":180,
+        "inspection":180,
+        "claim_submission":180,
+        "claim_release":180
     }
-    
-    approval_date = registration_date + timedelta(days=gaussian_gap(min_gaps["approval"], max_gaps["approval"], "approval"))
 
-    if approval_date <= END_DATE:
-        vendor_selection_date = approval_date + timedelta(days=gaussian_gap(min_gaps["vendor_selection"], max_gaps["vendor_selection"], "vendor_selection"))
+    approval_date = None
+    vendor_selection_date = None
+    vendor_acceptance_date = None
+    installation_date = None
+    inspection_date = None
+    claim_submission_date = None
+    claim_release_date = None
+
+    # Approval Date Calculation
+    remaining_days = (END_DATE - registration_date).days
+    current_max_gap = min(max_gaps["approval"], remaining_days)
+
+    if current_max_gap >= min_gaps["approval"]:
+        approval_date = registration_date + timedelta(days=gaussian_gap(min_gaps["approval"], current_max_gap))
+
+    if approval_date and approval_date <= END_DATE:
         
-        if vendor_selection_date <= END_DATE:
-            vendor_acceptance_date = vendor_selection_date + timedelta(days=gaussian_gap(min_gaps["vendor_acceptance"], max_gaps["vendor_acceptance"], "vendor_acceptance"))
-            
-            if vendor_acceptance_date <= END_DATE:
-                installation_date = vendor_acceptance_date + timedelta(days=gaussian_gap(min_gaps["installation"], max_gaps["installation"], "installation"))
+        # Vendor Selection Date Calculation
+        remaining_days = (END_DATE - approval_date).days
+        current_max_gap = min(max_gaps["vendor_selection"], remaining_days)
 
-                remaining_days = (END_DATE - vendor_acceptance_date).days
+        if current_max_gap >= min_gaps["vendor_selection"]:
+            vendor_selection_date = approval_date + timedelta(days=gaussian_gap(min_gaps["vendor_selection"], current_max_gap))
+
+            if vendor_selection_date and vendor_selection_date <= END_DATE:
                 
-                if installation_date <= END_DATE:
-                    inspection_date = installation_date + timedelta(days=gaussian_gap(min_gaps["inspection"], max_gaps["inspection"], "inspection"))
-                    
-                    if inspection_date <= END_DATE:
-                        claim_submission_date = inspection_date + timedelta(days=gaussian_gap(min_gaps["claim_submission"], max_gaps["claim_submission"], "claim_submission"))
+                # Vendor Acceptance Date Calculation
+                remaining_days = (END_DATE - vendor_selection_date).days
+                current_max_gap = min(max_gaps["vendor_acceptance"], remaining_days)
 
-                        if claim_submission_date <= END_DATE:
-                            claim_release_date = claim_submission_date + timedelta(days=gaussian_gap(min_gaps["claim_release"], max_gaps["claim_release"], "claim_release"))
+                if current_max_gap >= min_gaps["vendor_acceptance"]:
+                    vendor_acceptance_date = vendor_selection_date + timedelta(days=gaussian_gap(min_gaps["vendor_acceptance"], current_max_gap))
 
-                            remaining_days = (END_DATE - claim_submission_date).days
-                            
-                            if claim_release_date > END_DATE:
-                                claim_release_date = None
-                        else:
-                            claim_release_date = None
-                    else:
-                        claim_submission_date = None
-                        claim_release_date = None
-                else:
-                    installation_date = None
-                    inspection_date = None
-                    claim_submission_date = None
-                    claim_release_date = None
-            else:
-                vendor_acceptance_date = None
-                installation_date = None
-                inspection_date = None
-                claim_submission_date = None
-                claim_release_date = None
-        else:
-            vendor_selection_date = None
-            vendor_acceptance_date = None
-            installation_date = None
-            inspection_date = None
-            claim_submission_date = None
-            claim_release_date = None
-    else:
-        approval_date = None
-        vendor_selection_date = None
-        vendor_acceptance_date = None
-        installation_date = None
-        inspection_date = None
-        claim_submission_date = None
-        claim_release_date = None
-    
+                    if vendor_acceptance_date and vendor_acceptance_date <= END_DATE:
+                        
+                        # Installation Date Calculation
+                        remaining_days = (END_DATE - vendor_acceptance_date).days
+                        current_max_gap = min(max_gaps["installation"], remaining_days)
+
+                        if current_max_gap >= min_gaps["installation"]:
+                            installation_date = vendor_acceptance_date + timedelta(days=gaussian_gap(min_gaps["installation"], current_max_gap))
+
+                            if installation_date and installation_date <= END_DATE:
+                                
+                                # Inspection Date Calculation
+                                remaining_days = (END_DATE - installation_date).days
+                                current_max_gap = min(max_gaps["inspection"], remaining_days)
+
+                                if current_max_gap >= min_gaps["inspection"]:
+                                    inspection_date = installation_date + timedelta(days=gaussian_gap(min_gaps["inspection"], current_max_gap))
+
+                                    if inspection_date and inspection_date <= END_DATE:
+                                        
+                                        # Claim Submission Date Calculation
+                                        remaining_days = (END_DATE - inspection_date).days
+                                        current_max_gap = min(max_gaps["claim_submission"], remaining_days)
+
+                                        if current_max_gap >= min_gaps["claim_submission"]:
+                                            claim_submission_date = inspection_date + timedelta(days=gaussian_gap(min_gaps["claim_submission"], current_max_gap))
+
+                                            if claim_submission_date and claim_submission_date <= END_DATE:
+                                                
+                                                # Claim Release Date Calculation
+                                                remaining_days = (END_DATE - claim_submission_date).days
+                                                current_max_gap = min(max_gaps["claim_release"], remaining_days)
+
+                                                if current_max_gap >= min_gaps["claim_release"]:
+                                                    claim_release_date = claim_submission_date + timedelta(days=gaussian_gap(min_gaps["claim_release"], current_max_gap))
+                                                    if claim_release_date > END_DATE:
+                                                        claim_release_date = None
+
     result = {
         "registration_date": registration_date,
         "approval_date": approval_date,
@@ -525,29 +543,13 @@ def generate_dates_sequence():
         "inspection_date": inspection_date,
         "claim_submission_date": claim_submission_date,
         "claim_release_date": claim_release_date,
-        "status": "Completed" if claim_release_date else "In Progress"
     }
-
-    if result["status"] == "In Progress":
-        if not approval_date:
-            result["status_detail"] = "Pending Approval"
-        elif not vendor_selection_date:
-            result["status_detail"] = "Pending Vendor Selection"
-        elif not vendor_acceptance_date:
-            result["status_detail"] = "Pending Vendor Acceptance"
-        elif not installation_date:
-            result["status_detail"] = "Pending Installation"
-        elif not inspection_date:
-            result["status_detail"] = "Pending Inspection"
-        elif not claim_submission_date:
-            result["status_detail"] = "Pending Claim Submission"
-        else:
-            result["status_detail"] = "Pending Claim Release"
-    else:
-        result["status_detail"] = "All Steps Completed"
     
     return result
 
+
+START_DATE = datetime.strptime('01-01-2024', '%d-%m-%Y')
+END_DATE = datetime.strptime('31-12-2024', '%d-%m-%Y')
 
 
 
@@ -646,7 +648,7 @@ combined_weight_values = [combined_weights[state] for state in combined_state_li
 
 
 # --- Data Generation ---
-num_records = 1048532
+num_records = 48532
 data = []
 
 
@@ -672,7 +674,7 @@ for _ in range(num_records):
     date_of_birth = random_dob()
     district = get_random_district_gaussian(state)
     gender = random.choices(gender_options, weights=gender_weights, k=1)[0]
-    dates = generate_dates_sequence()
+    dates = generate_dates_sequence(START_DATE=START_DATE, END_DATE=END_DATE)
     registration_date = dates["registration_date"]
     rwa_residential = assign_rwa_residential(state, district)
 

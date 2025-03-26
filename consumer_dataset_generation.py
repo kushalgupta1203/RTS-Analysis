@@ -379,12 +379,12 @@ def gaussian_gap(min_gap, max_gap, stage=None):
     ratios = {
         "approval": [78.44, 17.17, 4.39, 0, 0],
         "vendor_selection": [74.1, 24.2, 1.7, 0, 0],
-        "vendor_acceptance": [27.75, 58.88, 12.75, 0.62, 0],
-        "installation": [1.17, 24.93, 56.93, 15.65, 1.32],
-        "inspection": [19.22, 25.84, 45.92, 8.8, 0.22], 
-        "claim_submission": [12.22, 17.22, 8.8, 35.92, 25.84],
-        "claim_release": [1.17, 7.06, 19.8, 26.93, 45.76]
-    }
+        "vendor_acceptance": [57.88, 28.94, 13.18, 0, 0],
+        "installation": [20.04, 56.85, 13.11, 1.93, 0.07],
+        "inspection": [22.46, 47.44, 18.10, 7.66, 0.34],  
+        "claim_submission": [16.06, 37.66, 30.28, 5.70, 0.30],  
+        "claim_release": [15.41, 43.86, 22.73, 4.20, 1.80] 
+}
 
     if stage in ratios:
         ranges = [(1, 15), (16, 30), (31, 60), (61, 120), (121, max_gap + 1)]
@@ -447,10 +447,10 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
         "approval": 1,
         "vendor_selection": 7,
         "vendor_acceptance": 7,
-        "installation": 15,
-        "inspection": 15,
-        "claim_submission": 15,
-        "claim_release": 30
+        "installation": 7,
+        "inspection": 7,
+        "claim_submission": 7,
+        "claim_release": 7
     }
     
     max_gaps = {
@@ -648,7 +648,7 @@ combined_weight_values = [combined_weights[state] for state in combined_state_li
 
 
 # --- Data Generation ---
-num_records = 48532
+num_records = 1048532
 data = []
 
 

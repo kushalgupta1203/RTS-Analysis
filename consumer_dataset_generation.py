@@ -371,22 +371,21 @@ def random_dob():
 
 
 
-
 def gaussian_gap(min_gap, max_gap, stage=None):
     """Generate gap using a distribution based on provided ratios, clamped within specified range."""
 
     ratios = {
-        "approval": [56.92, 6.98, 10.57, 13.16, 9.77],
-        "vendor_selection": [14.10, 14.20, 20.70, 26.80, 24.20],
-        "vendor_acceptance": [14.20, 14.10, 26.80, 20.70, 24.20],
-        "installation": [11.03, 14.75, 26.60, 29.56, 16.85],
-        "inspection": [12.22, 15.84, 25.92, 28.80, 17.22],
-        "claim_submission": [12.22, 17.22, 28.80, 25.92, 15.84],
-        "claim_release": [11.03, 16.85, 29.56, 26.60, 14.75]
+        "approval": [58.44, 7.17, 10.85, 13.51, 10.03],
+        "vendor_selection": [24.1, 34.2, 30.7, 6.8, 4.2],
+        "vendor_acceptance": [17.75, 38.88, 24.75, 13.75, 4.88],
+        "installation": [11.17, 14.93, 26.93, 29.92, 17.06],
+        "inspection": [22.22, 25.84, 35.92, 8.8, 7.22], 
+        "claim_submission": [12.22, 17.22, 8.8, 35.92, 25.84],
+        "claim_release": [11.17, 17.06, 19.8, 26.93, 25.05]
     }
 
     if stage in ratios:
-        ranges = [(0, 15), (16, 30), (31, 60), (61, 120), (121, max_gap+1)]
+        ranges = [(0, 15), (16, 30), (31, 60), (61, 120), (121, max_gap + 1)]
         weights = ratios[stage]
         
         # Normalize weights to sum up to 1
@@ -450,12 +449,12 @@ def generate_dates_sequence():
     }
     
     max_gaps = {
-        "approval": 120,
-        "vendor_selection": 120,
-        "vendor_acceptance": 60,
-        "installation": 120,
-        "inspection": 90,
-        "claim_submission": 90,
+        "approval": 180,
+        "vendor_selection": 180,
+        "vendor_acceptance": 180,
+        "installation": 180,
+        "inspection": 180,
+        "claim_submission": 180,
         "claim_release": 180
     }
     
@@ -550,6 +549,7 @@ def generate_dates_sequence():
         result["status_detail"] = "All Steps Completed"
     
     return result
+
 
 
 

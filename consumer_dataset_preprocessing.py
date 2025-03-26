@@ -1,62 +1,73 @@
 import pandas as pd
 from datetime import datetime
 
+print("Your dataset is under preprocessing phase...")
+
 def calculate_days(start_date, end_date):
-    if isinstance(start_date, str) and isinstance(end_date, str):
+    if pd.isna(start_date) or pd.isna(end_date):
+        return "N/A"
+    
+    if isinstance(start_date, str):
         start_date = start_date.strip().lower()
+    if isinstance(end_date, str):
         end_date = end_date.strip().lower()
-        
-        if start_date == "declined" or end_date == "declined":
+    
+    if start_date in ["declined", "pending"] or end_date in ["declined", "pending"]:
+        return "Pending" if "pending" in [start_date, end_date] else "N/A"
+    
+    try:
+        start_dt = pd.to_datetime(start_date, format="%d-%m-%Y", errors='coerce')
+        end_dt = pd.to_datetime(end_date, format="%d-%m-%Y", errors='coerce')
+        if pd.isna(start_dt) or pd.isna(end_dt):
             return "N/A"
-        if start_date == "pending" or end_date == "pending":
-            return "Pending"
         
-        try:
-            start_dt = datetime.strptime(start_date, "%d-%m-%Y")
-            end_dt = datetime.strptime(end_date, "%d-%m-%Y")
-            return (end_dt - start_dt).days
-        except ValueError:
-            return "N/A"
-    return "N/A"
+        # Calculate days INCLUDING both start and end dates
+        days = (end_dt - start_dt).days + 1  # Key change here (+1)
+        return days
+    except Exception as e:
+        print(f"Error calculating days: {e}")
+        return "N/A"
 
 def preprocess_data(input_file, output_file):
-    print(f"Your dataset is in under preprocessing phase...")
     
     df = pd.read_csv(input_file, dtype=str)
     
-    # Define the date columns for processing
+    # Replace applymap with map for element-wise operation
+    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    
     date_columns = [
         "Registration Date", "Application Approved Date", "Vendor Selection Date",
         "Vendor Acceptance Date", "Installation Date", "Inspection Date",
         "Subsidy Redeemed Date", "Subsidy Released Date"
     ]
     
-    # Strip whitespace from all string columns
-    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    for col in date_columns:
+        df[col] = pd.to_datetime(df[col], format="%d-%m-%Y", errors='coerce')
     
-    # Apply processing only if application status is accepted
     accepted_mask = df["Acceptance Status"].str.lower() == "accepted"
     
-    # Creating new columns for phase durations
-    df.loc[accepted_mask, "Registration to Approval Days"] = df.apply(lambda row: calculate_days(row["Registration Date"], row["Application Approved Date"]), axis=1)
-    df.loc[accepted_mask, "Approval to Vendor Selection Days"] = df.apply(lambda row: calculate_days(row["Application Approved Date"], row["Vendor Selection Date"]), axis=1)
-    df.loc[accepted_mask, "Vendor Selection to Acceptance Days"] = df.apply(lambda row: calculate_days(row["Vendor Selection Date"], row["Vendor Acceptance Date"]), axis=1)
-    df.loc[accepted_mask, "Acceptance to Installation Days"] = df.apply(lambda row: calculate_days(row["Vendor Acceptance Date"], row["Installation Date"]), axis=1)
-    df.loc[accepted_mask, "Installation to Inspection Days"] = df.apply(lambda row: calculate_days(row["Installation Date"], row["Inspection Date"]), axis=1)
-    df.loc[accepted_mask, "Inspection to Subsidy Redeemed Days"] = df.apply(lambda row: calculate_days(row["Inspection Date"], row["Subsidy Redeemed Date"]), axis=1)
-    df.loc[accepted_mask, "Subsidy Redeemed to Released Days"] = df.apply(lambda row: calculate_days(row["Subsidy Redeemed Date"], row["Subsidy Released Date"]), axis=1)
-    
-    # Apply N/A for rejected applications
-    rejected_mask = df["Acceptance Status"].str.lower() == "rejected"
-    new_columns = [
-        "Registration to Approval Days", "Approval to Vendor Selection Days",
-        "Vendor Selection to Acceptance Days", "Acceptance to Installation Days",
-        "Installation to Inspection Days", "Inspection to Subsidy Redeemed Days",
-        "Subsidy Redeemed to Released Days"
+    date_pairs = [
+        ("Registration Date", "Application Approved Date", "Registration to Approval Days"),
+        ("Application Approved Date", "Vendor Selection Date", "Approval to Vendor Selection Days"),
+        ("Vendor Selection Date", "Vendor Acceptance Date", "Vendor Selection to Acceptance Days"),
+        ("Vendor Acceptance Date", "Installation Date", "Acceptance to Installation Days"),
+        ("Installation Date", "Inspection Date", "Installation to Inspection Days"),
+        ("Inspection Date", "Subsidy Redeemed Date", "Inspection to Subsidy Redeemed Days"),
+        ("Subsidy Redeemed Date", "Subsidy Released Date", "Subsidy Redeemed to Released Days")
     ]
+    
+    for start_col, end_col, new_col in date_pairs:
+        df.loc[accepted_mask, new_col] = df.loc[accepted_mask].apply(
+            lambda row: calculate_days(row[start_col], row[end_col]), axis=1
+        )
+    
+    rejected_mask = df["Acceptance Status"].str.lower() == "rejected"
+    new_columns = [col[2] for col in date_pairs]
     df.loc[rejected_mask, new_columns] = "N/A"
     
-    # Save to new file
+    # Replace empty cells with 'NULL'
+    df.fillna("NULL", inplace=True)
+
     df.to_csv(output_file, index=False)
     print(f"Processed data saved to {output_file}")
 

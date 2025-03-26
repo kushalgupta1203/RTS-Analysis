@@ -2,7 +2,7 @@ import pandas as pd
 from ydata_profiling import ProfileReport
 
 # Define file location
-file_path = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"
+file_path = r"D:\Projects\RTS Analysis\consumer_preprocessed_data.csv"
 
 # Read Excel file
 df = pd.read_csv(file_path)

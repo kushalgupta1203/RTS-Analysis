@@ -369,15 +369,17 @@ def random_dob():
 
     return birth_date
 
-def weighted_month_selection():
-    """
-    Select a month with specific weighting:
-    - January: Minimum
-    - July: Second highest
-    - November/December: Highest
-    - Other months: Medium
-    """
-    # Define weights for each month (1-12)
+
+
+def gaussian_gap(min_gap, max_gap):
+    """Simulate a gap using a Gaussian distribution within the specified range."""
+    # Placeholder for actual Gaussian calculation logic
+    return random.randint(min_gap, max_gap)
+
+def generate_dates_sequence():
+    """Generate a sequence of dates for the solar application process with monthly distribution."""
+    
+    # Select month based on specified distribution
     month_weights = {
         1: 0.03,   # January - minimum
         2: 0.05,
@@ -400,92 +402,6 @@ def weighted_month_selection():
         k=1
     )[0]
     
-    return month
-
-application_numbers = set()
-ca_numbers = set()
-
-def generate_unique_application_number():
-    """Generate a unique 8-digit numeric application number, not starting with 0."""
-    while True:
-        app_number = ''.join(random.choices(string.digits[1:], k=1)) + ''.join(random.choices(string.digits, k=7))
-        if app_number not in application_numbers:
-            application_numbers.add(app_number)
-            return app_number
-
-def generate_unique_9digit_ca_number():
-    """Generate a consumer account number, not starting with 0."""
-    while True:
-        ca_number = ''.join(random.choices(string.digits[1:], k=1)) + ''.join(random.choices(string.digits, k=8))
-        if ca_number not in ca_numbers:
-            ca_numbers.add(ca_number)
-            return ca_number
-
-def generate_email(first_name, last_name):
-    """Generate an email based on first and last name"""
-    domains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "rediffmail.com"]
-    name_part = f"{first_name.lower()}.{last_name.lower()}".replace(" ", "")
-    random_num = random.randint(1, 9999)
-    domain = random.choice(domains)
-    return f"{name_part}{random_num}@{domain}"
-
-def assign_production_capacity():
-    """Assign production capacity based on given distribution"""
-    rand = random.uniform(0, 1)  # Random number between 0-1
-
-    if rand <= 168 / 44953:
-        return "1 - 2 KW"
-    elif rand <= (168 + 2496) / 44953:
-        return "2 - 3 KW"
-    elif rand <= (168 + 2496 + 31495) / 44953:
-        return "3 - 4 KW"
-    elif rand <= (168 + 2496 + 31495 + 6598) / 44953:
-        return "4 - 5 KW"
-    elif rand <= (168 + 2496 + 31495 + 6598 + 3300) / 44953:
-        return "5 - 6 KW"
-    else:
-        return "Above 6 KW"
-
-def assign_rwa_residential(state, district):
-    """
-    Assigns 'RWA' or 'Residential' based on a skewed Gaussian distribution across states and districts.
-    - 17% applicants should be 'RWA'
-    - 83% should be 'Residential'
-    - Gaussian skew ensures district/state-based variations.
-    """
-    # Base probability distribution
-    base_prob = 0.17  # RWA ratio
-
-    # Skew factor based on state and district (introducing variation)
-    state_hash = abs(hash(state)) % 10 / 100  # Convert state hash to a small variation (0 to 0.1)
-    district_hash = abs(hash(district)) % 5 / 100  # Convert district hash to a smaller variation (0 to 0.05)
-
-    # Skewed probability for RWA (some states/districts have slightly higher/lower chance)
-    adjusted_prob = base_prob + state_hash - district_hash  # Adjust probability using skew factor
-    adjusted_prob = max(0.10, min(0.25, adjusted_prob))  # Keep within a reasonable range (10% - 25%)
-
-    # Assign category based on adjusted probability
-    return "RWA" if random.random() < adjusted_prob else "Residential"
-
-
-
-
-def gaussian_gap(min_gap, max_gap, skew_factor=0.3, std_dev_factor=0.2):
-    """Generate a time gap with Gaussian distribution, slightly skewed."""
-    mean = min_gap + (max_gap - min_gap) * skew_factor
-    std_dev = (max_gap - min_gap) * std_dev_factor  # Controls spread
-
-    # Generate a Gaussian-distributed number
-    gap = int(random.gauss(mean, std_dev))
-
-    # Ensure the gap stays within the range
-    return max(min_gap, min(max_gap, gap))
-
-def generate_dates_sequence():
-    """Generate a sequence of dates for the solar application process with monthly distribution"""
-    # Select month based on specified distribution
-    month = random.randint(1, 12)  # Placeholder for weighted_month_selection()
-    
     # Generate a random day within that month
     year = 2024
     max_day = 29 if month == 2 else 30 if month in [4, 6, 9, 11] else 31
@@ -493,11 +409,25 @@ def generate_dates_sequence():
     
     registration_date = datetime(year, month, day)
 
-    min_gaps = {"approval": 3, "vendor_selection": 5, "vendor_acceptance": 2, 
-                "installation": 10, "inspection": 5, "claim_submission": 3, "claim_release": 30}
+    min_gaps = {
+        "approval": 3,
+        "vendor_selection": 5,
+        "vendor_acceptance": 2,
+        "installation": 10,
+        "inspection": 5,
+        "claim_submission": 3,
+        "claim_release": 30
+    }
     
-    max_gaps = {"approval": 15, "vendor_selection": 15, "vendor_acceptance": 7, 
-                "installation": 45, "inspection": 15, "claim_submission": 30, "claim_release": 180}
+    max_gaps = {
+        "approval": 15,
+        "vendor_selection": 15,
+        "vendor_acceptance": 7,
+        "installation": 45,
+        "inspection": 15,
+        "claim_submission": 30,
+        "claim_release": 180
+    }
     
     approval_date = registration_date + timedelta(days=gaussian_gap(min_gaps["approval"], max_gaps["approval"]))
 
@@ -590,6 +520,76 @@ def generate_dates_sequence():
         result["status_detail"] = "All Steps Completed"
     
     return result
+
+
+
+application_numbers = set()
+ca_numbers = set()
+
+def generate_unique_application_number():
+    """Generate a unique 8-digit numeric application number, not starting with 0."""
+    while True:
+        app_number = ''.join(random.choices(string.digits[1:], k=1)) + ''.join(random.choices(string.digits, k=7))
+        if app_number not in application_numbers:
+            application_numbers.add(app_number)
+            return app_number
+
+def generate_unique_9digit_ca_number():
+    """Generate a consumer account number, not starting with 0."""
+    while True:
+        ca_number = ''.join(random.choices(string.digits[1:], k=1)) + ''.join(random.choices(string.digits, k=8))
+        if ca_number not in ca_numbers:
+            ca_numbers.add(ca_number)
+            return ca_number
+
+def generate_email(first_name, last_name):
+    """Generate an email based on first and last name"""
+    domains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "rediffmail.com"]
+    name_part = f"{first_name.lower()}.{last_name.lower()}".replace(" ", "")
+    random_num = random.randint(1, 9999)
+    domain = random.choice(domains)
+    return f"{name_part}{random_num}@{domain}"
+
+def assign_production_capacity():
+    """Assign production capacity based on given distribution"""
+    rand = random.uniform(0, 1)  # Random number between 0-1
+
+    if rand <= 168 / 44953:
+        return "1 - 2 KW"
+    elif rand <= (168 + 2496) / 44953:
+        return "2 - 3 KW"
+    elif rand <= (168 + 2496 + 31495) / 44953:
+        return "3 - 4 KW"
+    elif rand <= (168 + 2496 + 31495 + 6598) / 44953:
+        return "4 - 5 KW"
+    elif rand <= (168 + 2496 + 31495 + 6598 + 3300) / 44953:
+        return "5 - 6 KW"
+    else:
+        return "Above 6 KW"
+
+def assign_rwa_residential(state, district):
+    """
+    Assigns 'RWA' or 'Residential' based on a skewed Gaussian distribution across states and districts.
+    - 17% applicants should be 'RWA'
+    - 83% should be 'Residential'
+    - Gaussian skew ensures district/state-based variations.
+    """
+    # Base probability distribution
+    base_prob = 0.17  # RWA ratio
+
+    # Skew factor based on state and district (introducing variation)
+    state_hash = abs(hash(state)) % 10 / 100  # Convert state hash to a small variation (0 to 0.1)
+    district_hash = abs(hash(district)) % 5 / 100  # Convert district hash to a smaller variation (0 to 0.05)
+
+    # Skewed probability for RWA (some states/districts have slightly higher/lower chance)
+    adjusted_prob = base_prob + state_hash - district_hash  # Adjust probability using skew factor
+    adjusted_prob = max(0.10, min(0.25, adjusted_prob))  # Keep within a reasonable range (10% - 25%)
+
+    # Assign category based on adjusted probability
+    return "RWA" if random.random() < adjusted_prob else "Residential"
+
+
+
 
 
 # Gender Options and Ratio

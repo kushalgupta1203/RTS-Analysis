@@ -8,7 +8,7 @@ from faker import Faker
 import string
 from collections import defaultdict
 
-print(f"Your dataset is under generation...")
+print(f"Your dataset is under generation phase...")
 
 # Set a seed for reproducibility
 np.random.seed(42)

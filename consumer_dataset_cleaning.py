@@ -1,6 +1,6 @@
 import pandas as pd
 
-print(f"Your dataset is getting cleaned...")
+print(f"Your dataset is in under cleaning phase...")
 
 # Define file locations
 input_file = r"D:\Projects\RTS Analysis\consumer_application_data.csv"

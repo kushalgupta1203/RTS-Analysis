@@ -2,17 +2,27 @@ import pandas as pd
 from datetime import datetime
 
 def calculate_days(start_date, end_date):
-    if start_date in ["declined", "pending"] or end_date in ["declined", "pending"]:
-        return "N/A" if start_date == "declined" or end_date == "declined" else "pending"
-    try:
-        start_dt = datetime.strptime(start_date, "%d-%m-%Y")
-        end_dt = datetime.strptime(end_date, "%d-%m-%Y")
-        return (end_dt - start_dt).days
-    except ValueError:
-        return "N/A"
+    if isinstance(start_date, str) and isinstance(end_date, str):
+        start_date = start_date.strip().lower()
+        end_date = end_date.strip().lower()
+        
+        if start_date == "declined" or end_date == "declined":
+            return "N/A"
+        if start_date == "pending" or end_date == "pending":
+            return "pending"
+        
+        try:
+            start_dt = datetime.strptime(start_date, "%d-%m-%Y")
+            end_dt = datetime.strptime(end_date, "%d-%m-%Y")
+            return (end_dt - start_dt).days
+        except ValueError:
+            return "N/A"
+    return "N/A"
 
 def preprocess_data(input_file, output_file):
-    df = pd.read_csv(input_file)
+    print(f"Your dataset is in under preprocessing phase...")
+    
+    df = pd.read_csv(input_file, dtype=str)
     
     # Define the date columns for processing
     date_columns = [
@@ -20,6 +30,9 @@ def preprocess_data(input_file, output_file):
         "Vendor Acceptance Date", "Installation Date", "Inspection Date",
         "Subsidy Redeemed Date", "Subsidy Released Date"
     ]
+    
+    # Strip whitespace from all string columns
+    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
     
     # Creating new columns for phase durations
     df["Registration to Approval Days"] = df.apply(lambda row: calculate_days(row["Registration Date"], row["Application Approved Date"]), axis=1)

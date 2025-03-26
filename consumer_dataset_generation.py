@@ -314,28 +314,27 @@ def get_random_district_gaussian(state):
         return None
 
 
-
 # Track selection frequency
 solar_org_selection_count = defaultdict(int)
 
 def get_solar_organizations_gaussian():
     num_orgs = len(SOLAR_ORGANIZATIONS)
     if num_orgs == 0:
-        return None  # Return None if there are no organizations
+        return None  # Return None if no organizations exist
 
-    mean = (num_orgs - 1) / 2  # Center of distribution
-    std_dev = max(1, num_orgs / 4)  # Controls variance
+    mean = (num_orgs - 1) / 2  # Center of Gaussian distribution
+    std_dev = max(1, num_orgs / 3)  # Slightly larger spread for more variance
 
-    # Assign initial weights using a Gaussian-like curve
+    # Assign initial weights using a Gaussian curve
     base_weights = [np.exp(-((i - mean) ** 2) / (2 * std_dev ** 2)) for i in range(num_orgs)]
 
     # Normalize weights
     total_weight = sum(base_weights)
     base_weights = [w / total_weight for w in base_weights]
 
-    # Adjust weights based on selection count to ensure variation
+    # Adjust weights to introduce **higher variance** in selection
     adjusted_weights = [
-        w / (1 + solar_org_selection_count[SOLAR_ORGANIZATIONS[i]])  
+        w / (1 + np.exp(0.5 * solar_org_selection_count[SOLAR_ORGANIZATIONS[i]]) + random.uniform(0, 0.3))  
         for i, w in enumerate(base_weights)
     ]
 
@@ -343,15 +342,13 @@ def get_solar_organizations_gaussian():
     total_adjusted_weight = sum(adjusted_weights)
     adjusted_weights = [w / total_adjusted_weight for w in adjusted_weights]
 
-    # **Select one organization based on adjusted probability**
+    # Select one organization based on adjusted probability
     selected_org = random.choices(SOLAR_ORGANIZATIONS, weights=adjusted_weights, k=1)[0]
 
-    # **Update selection count**
-    solar_org_selection_count[selected_org] += 1  
+    # Update selection count (higher weight to frequently picked ones)
+    solar_org_selection_count[selected_org] += random.randint(1, 3)  
 
     return selected_org
-
-
 
 # Helper functions
 def random_date(start_date, end_date):

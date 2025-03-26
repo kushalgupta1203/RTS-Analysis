@@ -446,6 +446,28 @@ def assign_production_capacity():
     else:
         return "Above 6 KW"
 
+def assign_rwa_residential(state, district):
+    """
+    Assigns 'RWA' or 'Residential' based on a skewed Gaussian distribution across states and districts.
+    - 17% applicants should be 'RWA'
+    - 83% should be 'Residential'
+    - Gaussian skew ensures district/state-based variations.
+    """
+    # Base probability distribution
+    base_prob = 0.17  # RWA ratio
+
+    # Skew factor based on state and district (introducing variation)
+    state_hash = abs(hash(state)) % 10 / 100  # Convert state hash to a small variation (0 to 0.1)
+    district_hash = abs(hash(district)) % 5 / 100  # Convert district hash to a smaller variation (0 to 0.05)
+
+    # Skewed probability for RWA (some states/districts have slightly higher/lower chance)
+    adjusted_prob = base_prob + state_hash - district_hash  # Adjust probability using skew factor
+    adjusted_prob = max(0.10, min(0.25, adjusted_prob))  # Keep within a reasonable range (10% - 25%)
+
+    # Assign category based on adjusted probability
+    return "RWA" if random.random() < adjusted_prob else "Residential"
+
+
 
 
 def gaussian_gap(min_gap, max_gap, skew_factor=0.3, std_dev_factor=0.2):
@@ -624,6 +646,7 @@ for _ in range(num_records):
     gender = random.choices(gender_options, weights=gender_weights, k=1)[0]
     dates = generate_dates_sequence()
     registration_date = dates["registration_date"]
+    rwa_residential = assign_rwa_residential(state, district)
 
     # Helper function to format dates safely
     def format_date_safely(date_obj):
@@ -639,6 +662,7 @@ for _ in range(num_records):
         "Gender": gender,
         "State/UT": state,
         "District": district,
+        "RWA/Residential": rwa_residential,
         "Date Of Birth": date_of_birth.strftime('%Y-%m-%d'),
         "CA Number": generate_unique_9digit_ca_number(),
         "Discom Name": assign_discoms_gaussian(state),

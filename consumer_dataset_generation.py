@@ -385,7 +385,7 @@ def gaussian_gap(min_gap, max_gap, stage=None):
     }
 
     if stage in ratios:
-        ranges = [(0, 15), (16, 30), (31, 60), (61, 120), (121, max_gap + 1)]
+        ranges = [(1, 15), (16, 30), (31, 60), (61, 120), (121, max_gap + 1)]
         weights = ratios[stage]
         
         # Normalize weights to sum up to 1
@@ -439,7 +439,7 @@ def generate_dates_sequence():
     registration_date = datetime(year, month, day)
 
     min_gaps = {
-        "approval": 0,
+        "approval": 1,
         "vendor_selection": 7,
         "vendor_acceptance": 7,
         "installation": 15,

@@ -655,6 +655,7 @@ for _ in range(num_records):
 
     # Generate the rest of the data
     record = {
+        "Application Number": generate_unique_application_number(),
         "Consumer First Name": consumer_first_name,
         "Consumer Last Name": consumer_last_name,
         "Guardian First Name": guardian_first_name,
@@ -667,14 +668,13 @@ for _ in range(num_records):
         "CA Number": generate_unique_9digit_ca_number(),
         "Discom Name": assign_discoms_gaussian(state),
         "Email Address": generate_email(consumer_first_name, consumer_last_name),
-        "Registration Date": registration_date.strftime('%Y-%m-%d'),
         "Acceptance Status": acceptance_status,
         "Production Capacity (KW)": assign_production_capacity(),
-        "Application Number": generate_unique_application_number(),
-        "Application Approved Date": format_date_safely(dates["approval_date"]) if is_accepted else "Declined",
         "Vendor First Name": fake.first_name(),
         "Vendor Last Name": fake.last_name(),
         "Vendor Organization": get_solar_organization_weighted(),
+        "Registration Date": registration_date.strftime('%Y-%m-%d'),
+        "Application Approved Date": format_date_safely(dates["approval_date"]) if is_accepted else "Declined",
         "Vendor Selection Date": format_date_safely(dates["vendor_selection_date"]) if is_accepted else "Declined",
         "Vendor Acceptance Date": format_date_safely(dates["vendor_acceptance_date"]) if is_accepted else "Declined",
         "Installation Date": format_date_safely(dates["installation_date"]) if is_accepted else "Declined",

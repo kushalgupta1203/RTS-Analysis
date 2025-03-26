@@ -12,8 +12,12 @@ def calculate_days(start_date, end_date):
     if isinstance(end_date, str):
         end_date = end_date.strip().lower()
     
-    if start_date in ["declined", "pending"] or end_date in ["declined", "pending"]:
-        return "Pending" if "pending" in [start_date, end_date] else "N/A"
+    # Check for "pending" status
+    if start_date in ["pending"] or end_date in ["pending"]:
+        return "Pending"
+
+    if start_date in ["declined"] or end_date in ["declined"]:
+        return "N/A"
     
     try:
         start_dt = pd.to_datetime(start_date, format="%d-%m-%Y", errors='coerce')
@@ -69,7 +73,7 @@ def preprocess_data(input_file, output_file):
     df.fillna("NULL", inplace=True)
 
     df.to_csv(output_file, index=False)
-    print(f"Processed data saved to {output_file}")
+    print(f"Data generation complete. CSV file created: consumer_preprocessed_data.csv")
 
 # File paths
 input_file = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"

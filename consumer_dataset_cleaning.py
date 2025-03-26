@@ -9,8 +9,8 @@ output_file = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"
 # List of columns to extract
 columns_to_extract = [
     "Application Number", "Gender", "State/UT", "District", "RWA/Residential", "Discom Name",
-    "Registration Date", "Acceptance Status", "Production Capacity (KW)",
-    "Application Approved Date", "Vendor Organization", "Vendor Selection Date",
+    "Acceptance Status", "Production Capacity (KW)",  "Vendor Organization",
+    "Registration Date", "Application Approved Date", "Vendor Selection Date",
     "Vendor Acceptance Date", "Installation Date", "Inspection Date",
     "Subsidy Redeemed Date", "Subsidy Released Date"
 ]

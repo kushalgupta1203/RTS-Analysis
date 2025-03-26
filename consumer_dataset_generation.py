@@ -314,9 +314,6 @@ def get_random_district_gaussian(state):
         return None
 
 
-import numpy as np
-import random
-from collections import defaultdict
 
 # Track selection frequency
 solar_org_selection_count = defaultdict(int)

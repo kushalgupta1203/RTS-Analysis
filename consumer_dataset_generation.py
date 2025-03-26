@@ -240,10 +240,15 @@ ACCEPTANCE_RATIOS = {
 }
 
 
-SOLAR_ORGANIZATION_WEIGHTS = [
-    10.245, 8.987, 7.654, 6.543, 6.121, 5.789, 5.235, 4.876, 4.321, 3.987,  
-    3.756, 3.456, 3.111, 2.987, 2.765, 2.456, 2.123, 1.987, 1.543, 1.245
-]
+SOLAR_ORGANIZATION_WEIGHTS = {
+    "SunTech Solar Solutions": 0.075, "GreenEnergy Systems": 0.050, "SolarPeak Innovations": 0.065, 
+    "BrightSun Power": 0.090, "EcoSolar Enterprises": 0.040, "RadiantSun Energy": 0.085, 
+    "InfiniteLight Solar": 0.060, "PowerSun Technologies": 0.055, "SunRise Renewable Solutions": 0.070, 
+    "GreenRay Solar Systems": 0.045, "SkyPower Solar": 0.095, "SunWave Energy": 0.080, 
+    "EcoPower Solar": 0.030, "SunBeam Energy Solutions": 0.035, "SolarEdge Systems": 0.025, 
+    "IlluminateSun Technologies": 0.055, "SolarHarvest Energy": 0.065, "SunVolt Power": 0.045, 
+    "GreenSpark Solar": 0.085, "SolarCrest Enterprises": 0.050
+}
 
 
 # Dictionary to track the count of each DISCOM's selection

@@ -3,6 +3,9 @@ venv/
  
 # Ignore sources folder 
 sources/ 
+
+# Ignore dataset
+dataset/
  
 # Ignore PowerPoint files 
 *.ppt 

@@ -16,3 +16,13 @@ sources/
 # Ignore Word documents 
 *.doc 
 *.docx 
+
+# Ignore Power BI files
+*.pbix  
+*.pbit  
+
+# Ignore Power BI cache and temporary files
+*.pbix~
+*.pbit~
+*.pbix.tmp
+*.pbit.tmp

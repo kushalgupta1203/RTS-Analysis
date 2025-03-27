@@ -5,7 +5,7 @@ print("Your data is getting transformed...")
 
 # Define the input and output file paths
 input_file_path = r"D:\Projects\RTS Analysis\consumer_preprocessed_data.csv"
-output_file_path = r"D:\Projects\RTS Analysis\total_applicants_data.csv"
+output_file_path = r"D:\Projects\RTS Analysis\total_applicants.csv"
 
 # Read the input CSV file
 data = pd.read_csv(input_file_path)

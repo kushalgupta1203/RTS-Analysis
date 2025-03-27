@@ -5,7 +5,7 @@ print("Your data is getting transformed...")
 
 # Define the input and output file paths
 input_file_path = r"D:\Projects\RTS Analysis\consumer_preprocessed_data.csv"
-output_file_path = r"D:\Projects\RTS Analysis\accepted_applicants_data.csv"
+output_file_path = r"D:\Projects\RTS Analysis\accepted_applicants.csv"
 
 # Read the CSV file into a DataFrame
 try:

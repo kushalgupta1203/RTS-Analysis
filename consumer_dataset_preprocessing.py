@@ -2,29 +2,29 @@ import pandas as pd
 
 print("Your dataset is under preprocessing phase...")
 
-def calculate_days(start_date, end_date):
+def calculate_days(start_dates, end_dates):
     # Clean inputs
-    start_str = str(start_date).strip() if pd.notna(start_date) else ""
-    end_str = str(end_date).strip() if pd.notna(end_date) else ""
+    start_dates = start_dates.str.strip().str.lower()
+    end_dates = end_dates.str.strip().str.lower()
     
     # Check for "pending"
-    if "pending" in [start_str.lower(), end_str.lower()]:
-        return "Pending"
+    pending_mask = start_dates.str.contains("pending", na=False) | end_dates.str.contains("pending", na=False)
     
-    # Attempt to convert to datetime
-    try:
-        start_dt = pd.to_datetime(start_str, errors='coerce')
-        end_dt = pd.to_datetime(end_str, errors='coerce')
-        
-        # Check for NaT (Not a Time)
-        if pd.isna(start_dt) or pd.isna(end_dt):
-            return "N/A"
-        
-        # Calculate days difference
-        return (end_dt - start_dt).days + 1  # Inclusive count
-    except Exception as e:
-        print(f"Error parsing dates: {e}")
-        return "N/A"
+    # Convert to datetime with explicit format if known
+    start_dt = pd.to_datetime(start_dates, errors='coerce')  # Add format='%Y-%m-%d' if applicable
+    end_dt = pd.to_datetime(end_dates, errors='coerce')      # Add format='%Y-%m-%d' if applicable
+    
+    # Initialize result as object dtype
+    days_diff = pd.Series(index=start_dates.index, dtype='object')  # Explicitly set dtype to object
+    
+    # Calculate days difference
+    days_diff[~pending_mask] = (end_dt - start_dt).dt.days + 1  # Inclusive count
+    
+    # Handle special cases
+    days_diff[pending_mask] = "Pending"
+    days_diff[start_dt.isna() | end_dt.isna()] = "N/A"
+    
+    return days_diff
 
 def preprocess_data(input_file, output_file):
     df = pd.read_csv(input_file, dtype=str)
@@ -34,7 +34,6 @@ def preprocess_data(input_file, output_file):
     
     # Create masks for accepted and rejected statuses
     accepted_mask = df["Acceptance Status"] == "Accepted"
-    rejected_mask = df["Acceptance Status"] == "Rejected"
     
     # Define date pairs for calculations
     date_pairs = [
@@ -47,22 +46,18 @@ def preprocess_data(input_file, output_file):
         ("Subsidy Redeemed Date", "Subsidy Released Date", "Subsidy Redeemed to Released Days")
     ]
     
-    # Process accepted applications
+    # Process accepted applications in a vectorized manner
     for start_col, end_col, new_col in date_pairs:
-        df[new_col] = "N/A"  # Default value
-        df.loc[accepted_mask, new_col] = df.loc[accepted_mask].apply(
-            lambda row: calculate_days(row[start_col], row[end_col]), axis=1
-        )
+        df[new_col] = pd.Series(dtype='object')  # Initialize column as object dtype
+        df.loc[accepted_mask, new_col] = calculate_days(df.loc[accepted_mask, start_col], df.loc[accepted_mask, end_col])
     
-    # Set N/A for rejected applications
-    new_columns = [col[2] for col in date_pairs]
-    df.loc[rejected_mask, new_columns] = "N/A"
+    # Set N/A for rejected applications (already handled by default value)
     
     # Handle missing values
     df.fillna("NULL", inplace=True)
     
     df.to_csv(output_file, index=False)
-    print(f"Data processed successfully. Output: {output_file}")
+    print(f"Data preprocessing complete. CSV File Created: {output_file}")
 
 # File paths
 input_file = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"

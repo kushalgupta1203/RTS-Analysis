@@ -373,104 +373,89 @@ def random_dob():
 
 import random
 from datetime import datetime, timedelta
+from scipy.stats import truncnorm
 
-def skewed_gaussian_gap(stage, ranges, weights):
+def truncated_gaussian(mean, std_dev, lower_bound, upper_bound):
+    """Generate a value from a truncated Gaussian distribution."""
+    a, b = (lower_bound - mean) / std_dev, (upper_bound - mean) / std_dev
+    return int(truncnorm.rvs(a, b, loc=mean, scale=std_dev))
+
+def skewed_gaussian_gap(ranges, normalized_weights):
     """Generate gap using skewed Gaussian distribution based on provided ranges and weights."""
-    # Normalize weights to sum up to 1
-    total_weight = sum(weights)
-    probabilities = [w / total_weight for w in weights]
-
-    # Select a range based on weights
-    selected_range = random.choices(ranges, weights=probabilities)[0]
-    
-    # Generate a skewed Gaussian value within the selected range
+    selected_range = random.choices(ranges, weights=normalized_weights)[0]
     mean = (selected_range[0] + selected_range[1]) / 2
-    std_dev = (selected_range[1] - selected_range[0]) / 6  # Adjust standard deviation for tighter distribution
-    
-    while True:
-        gap = int(random.gauss(mean, std_dev))
-        if selected_range[0] <= gap < selected_range[1]:  # Ensure value falls within the selected range
-            return gap
+    std_dev = (selected_range[1] - selected_range[0]) / 6
+    return truncated_gaussian(mean, std_dev, selected_range[0], selected_range[1])
 
-def gaussian_gap(min_gap, max_gap, stage=None):
+def gaussian_gap(min_gap, max_gap, stage=None, stage_data=None):
     """Generate gap using skewed Gaussian distribution based on provided ratios."""
-    ratios = {
-        "approval": [78.44, 17.17, 4.39, 0, 0],
-        "vendor_selection": [74.1, 24.2, 1.7, 0, 0],
-        "vendor_acceptance": [57.88, 28.94, 13.18, 0, 0],
-        "installation": [20.04, 56.85, 13.11, 1.93, 0.07],
-        "inspection": [22.46, 47.44, 18.10, 7.66, 0.34],  
-        "claim_submission": [16.06, 37.66, 30.28, 5.70, 0.30],  
-        "claim_release": [15.41, 43.86, 22.73, 4.20, 1.80] 
-    }
-
-    if stage in ratios:
-        ranges = [(1, 15), (16, 30), (31, 60), (61, 120), (121, max_gap + 1)]
-        weights = ratios[stage]
-        
-        return skewed_gaussian_gap(stage=stage, ranges=ranges, weights=weights)
+    if stage and stage_data:
+        ranges = stage_data['ranges']
+        normalized_weights = stage_data['normalized_weights']
+        return skewed_gaussian_gap(ranges=ranges, normalized_weights=normalized_weights)
     else:
         # Default Gaussian distribution if not defined stage
         mean = (min_gap + max_gap) / 2
         std_dev = (max_gap - min_gap) / 6
-        gap = random.gauss(mean, std_dev)
-        clamped_gap = int(round(max(min_gap, min(gap, max_gap))))
-        return clamped_gap
+        return truncated_gaussian(mean=mean, std_dev=std_dev,
+                                  lower_bound=min_gap,
+                                  upper_bound=max_gap)
 
 def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
     """Generate sequence of dates for the solar application process with monthly distribution."""
     month_weights = {
-        1: 0.03,
-        2: 0.05,
-        3: 0.06,
-        4: 0.07,
-        5: 0.08,
-        6: 0.09,
-        7: 0.15,
-        8: 0.09,
-        9: 0.08,
-        10: 0.09,
-        11: 0.12,
-        12: 0.09
+        1: 0.03, 2: 0.05, 3: 0.06, 4: 0.07, 5: 0.08, 6: 0.09,
+        7: 0.15, 8: 0.09, 9: 0.08, 10: 0.09, 11: 0.12, 12: 0.09
     }
-    
+
     # Select a month based on weights
     month = random.choices(
         population=list(month_weights.keys()),
         weights=list(month_weights.values()),
         k=1
     )[0]
-    
+
     # Generate a random day within that month
     year = START_DATE.year
     max_day = (
-        (29 if month == 2 else 
-         (30 if month in [4,6,9,11] else 
-          (31)))
+        (29 if month == 2 and year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else
+         (28 if month == 2 else
+          (30 if month in [4, 6, 9, 11] else
+           (31)))
     )
-    day = random.randint(1,max_day)
-    
+    )
+    day = random.randint(1, max_day)
+
     registration_date = datetime(year, month, day)
 
     min_gaps = {
-        "approval": 1, 
-        "vendor_selection": 1,
-        "vendor_acceptance": 1,
-        "installation": 1,
-        "inspection": 1,
-        "claim_submission": 1,
+        "approval": 1, "vendor_selection": 1, "vendor_acceptance": 1,
+        "installation": 1, "inspection": 1, "claim_submission": 1,
         "claim_release": 1
     }
-    
+
     max_gaps = {
-        "approval": 180,
-        "vendor_selection": 180,
-        "vendor_acceptance": 180,
-        "installation": 180,
-        "inspection": 180,
-        "claim_submission": 180,
+        "approval": 180, "vendor_selection": 180, "vendor_acceptance": 180,
+        "installation": 180, "inspection": 180, "claim_submission": 180,
         "claim_release": 180
     }
+
+    # Precompute ranges and normalized weights for each stage
+    ratios = {
+        "approval": [78.44, 17.17, 4.39, 0, 0],
+        "vendor_selection": [74.1, 24.2, 1.7, 0, 0],
+        "vendor_acceptance": [57.88, 28.94, 13.18, 0, 0],
+        "installation": [20.04, 56.85, 13.11, 1.93, 0.07],
+        "inspection": [22.46, 47.44, 18.10, 7.66, 0.34],
+        "claim_submission": [16.06, 37.66, 30.28, 5.70, 0.30],
+        "claim_release": [15.41, 43.86, 22.73, 4.20, 1.80]
+    }
+
+    stage_data = {}
+    for stage, weights in ratios.items():
+        ranges = [(1, 15), (16, 30), (31, 60), (61, 120), (121, max_gaps[stage] + 1)]
+        normalized_weights = [w / sum(weights) for w in weights]
+        stage_data[stage] = {'ranges': ranges, 'normalized_weights': normalized_weights}
 
     approval_date = None
     vendor_selection_date = None
@@ -480,68 +465,88 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
     claim_submission_date = None
     claim_release_date = None
 
-    # Approval Date Calculation
     remaining_days = (END_DATE - registration_date).days
+    current_date = registration_date  # Keep track of the current date
+
+    # Approval Date Calculation
     current_max_gap = min(max_gaps["approval"], remaining_days)
-
     if current_max_gap >= min_gaps["approval"]:
-        approval_date = registration_date + timedelta(days=gaussian_gap(min_gaps["approval"], current_max_gap, stage="approval"))
+        gap = gaussian_gap(min_gaps["approval"], current_max_gap, stage="approval", stage_data=stage_data["approval"])
+        approval_date = current_date + timedelta(days=gap)
+        if approval_date <= END_DATE:
+            current_date = approval_date
+            remaining_days = (END_DATE - current_date).days
+        else:
+            approval_date = None  # Reset if out of range
 
-    if approval_date and approval_date <= END_DATE:
-        
-        # Vendor Selection Date Calculation
-        remaining_days = (END_DATE - approval_date).days
+    # Vendor Selection Date Calculation
+    if approval_date:
         current_max_gap = min(max_gaps["vendor_selection"], remaining_days)
-
         if current_max_gap >= min_gaps["vendor_selection"]:
-            vendor_selection_date = approval_date + timedelta(days=gaussian_gap(min_gaps["vendor_selection"], current_max_gap, stage="vendor_selection"))
+            gap = gaussian_gap(min_gaps["vendor_selection"], current_max_gap, stage="vendor_selection", stage_data=stage_data["vendor_selection"])
+            vendor_selection_date = current_date + timedelta(days=gap)
+            if vendor_selection_date <= END_DATE:
+                current_date = vendor_selection_date
+                remaining_days = (END_DATE - current_date).days
+            else:
+                vendor_selection_date = None
 
-            if vendor_selection_date and vendor_selection_date <= END_DATE:
-                
-                # Vendor Acceptance Date Calculation
-                remaining_days = (END_DATE - vendor_selection_date).days
-                current_max_gap = min(max_gaps["vendor_acceptance"], remaining_days)
+    # Vendor Acceptance Date Calculation
+    if vendor_selection_date:
+        current_max_gap = min(max_gaps["vendor_acceptance"], remaining_days)
+        if current_max_gap >= min_gaps["vendor_acceptance"]:
+            gap = gaussian_gap(min_gaps["vendor_acceptance"], current_max_gap, stage="vendor_acceptance", stage_data=stage_data["vendor_acceptance"])
+            vendor_acceptance_date = current_date + timedelta(days=gap)
+            if vendor_acceptance_date <= END_DATE:
+                current_date = vendor_acceptance_date
+                remaining_days = (END_DATE - current_date).days
+            else:
+                vendor_acceptance_date = None
 
-                if current_max_gap >= min_gaps["vendor_acceptance"]:
-                    vendor_acceptance_date = vendor_selection_date + timedelta(days=gaussian_gap(min_gaps["vendor_acceptance"], current_max_gap, stage="vendor_acceptance"))
+    # Installation Date Calculation
+    if vendor_acceptance_date:
+        current_max_gap = min(max_gaps["installation"], remaining_days)
+        if current_max_gap >= min_gaps["installation"]:
+            gap = gaussian_gap(min_gaps["installation"], current_max_gap, stage="installation", stage_data=stage_data["installation"])
+            installation_date = current_date + timedelta(days=gap)
+            if installation_date <= END_DATE:
+                current_date = installation_date
+                remaining_days = (END_DATE - current_date).days
+            else:
+                installation_date = None
 
-                    if vendor_acceptance_date and vendor_acceptance_date <= END_DATE:
-                        
-                        # Installation Date Calculation
-                        remaining_days = (END_DATE - vendor_acceptance_date).days
-                        current_max_gap = min(max_gaps["installation"], remaining_days)
+    # Inspection Date Calculation
+    if installation_date:
+        current_max_gap = min(max_gaps["inspection"], remaining_days)
+        if current_max_gap >= min_gaps["inspection"]:
+            gap = gaussian_gap(min_gaps["inspection"], current_max_gap, stage="inspection", stage_data=stage_data["inspection"])
+            inspection_date = current_date + timedelta(days=gap)
+            if inspection_date <= END_DATE:
+                current_date = inspection_date
+                remaining_days = (END_DATE - current_date).days
+            else:
+                inspection_date = None
 
-                        if current_max_gap >= min_gaps["installation"]:
-                            installation_date = vendor_acceptance_date + timedelta(days=gaussian_gap(min_gaps["installation"], current_max_gap, stage="installation"))
+    # Claim Submission Date Calculation
+    if inspection_date:
+        current_max_gap = min(max_gaps["claim_submission"], remaining_days)
+        if current_max_gap >= min_gaps["claim_submission"]:
+            gap = gaussian_gap(min_gaps["claim_submission"], current_max_gap, stage="claim_submission", stage_data=stage_data["claim_submission"])
+            claim_submission_date = current_date + timedelta(days=gap)
+            if claim_submission_date <= END_DATE:
+                current_date = claim_submission_date
+                remaining_days = (END_DATE - current_date).days
+            else:
+                claim_submission_date = None
 
-                            if installation_date and installation_date <= END_DATE:
-                                
-                                # Inspection Date Calculation
-                                remaining_days = (END_DATE - installation_date).days
-                                current_max_gap = min(max_gaps["inspection"], remaining_days)
-
-                                if current_max_gap >= min_gaps["inspection"]:
-                                    inspection_date = installation_date + timedelta(days=gaussian_gap(min_gaps["inspection"], current_max_gap, stage="inspection"))
-
-                                    if inspection_date and inspection_date <= END_DATE:
-                                        
-                                        # Claim Submission Date Calculation
-                                        remaining_days = (END_DATE - inspection_date).days
-                                        current_max_gap = min(max_gaps["claim_submission"], remaining_days)
-
-                                        if current_max_gap >= min_gaps["claim_submission"]:
-                                            claim_submission_date = inspection_date + timedelta(days=gaussian_gap(min_gaps["claim_submission"], current_max_gap, stage="claim_submission"))
-
-                                            if claim_submission_date and claim_submission_date <= END_DATE:
-                                                
-                                                # Claim Release Date Calculation
-                                                remaining_days = (END_DATE - claim_submission_date).days
-                                                current_max_gap = min(max_gaps["claim_release"], remaining_days)
-
-                                                if current_max_gap >= min_gaps["claim_release"]:
-                                                    claim_release_date = claim_submission_date + timedelta(days=gaussian_gap(min_gaps["claim_release"], current_max_gap, stage="claim_release"))
-                                                    if claim_release_date > END_DATE:
-                                                        claim_release_date = None
+    # Claim Release Date Calculation
+    if claim_submission_date:
+        current_max_gap = min(max_gaps["claim_release"], remaining_days)
+        if current_max_gap >= min_gaps["claim_release"]:
+            gap = gaussian_gap(min_gaps["claim_release"], current_max_gap, stage="claim_release", stage_data=stage_data["claim_release"])
+            claim_release_date = current_date + timedelta(days=gap)
+            if claim_release_date > END_DATE:
+                claim_release_date = None
 
     result = {
         "registration_date": registration_date,
@@ -553,8 +558,9 @@ def generate_dates_sequence(START_DATE: datetime, END_DATE: datetime):
         "claim_submission_date": claim_submission_date,
         "claim_release_date": claim_release_date,
     }
-    
+
     return result
+
 
 
 
@@ -736,4 +742,4 @@ df = pd.DataFrame(data)
 df.to_csv("consumer_application_data.csv", index=False)
 
 
-print("Data generation complete. CSV file created: consumer_application_data.csv")
+print("Data generation complete. CSV file created: {output_file}")

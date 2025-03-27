@@ -20,4 +20,4 @@ df = pd.read_csv(input_file, usecols=columns_to_extract)
 
 # Save extracted data to a new Excel file
 df.to_csv(output_file, index=False)
-print(f"Data cleaning complete. CSV file created: consumer_cleaned_data.csv")
+print(f"Data cleaning complete. CSV file created: {output_file}")

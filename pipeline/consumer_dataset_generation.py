@@ -738,8 +738,10 @@ for _ in range(num_records):
 # --- DataFrame Creation and Export ---
 df = pd.DataFrame(data)
 
+output_file = r"D:\Projects\RTS Analysis\dataset\consumer_application_data.csv"
+
 # Export to CSV
-df.to_csv("consumer_application_data.csv", index=False)
+df.to_csv(output_file, index=False)
 
+print(f"Data generation complete. CSV file created: {output_file}")
 
-print("Data generation complete. CSV file created: {output_file}")

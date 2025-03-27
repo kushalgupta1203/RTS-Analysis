@@ -60,8 +60,8 @@ def preprocess_data(input_file, output_file):
     print(f"Data preprocessing complete. CSV File Created: {output_file}")
 
 # File paths
-input_file = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"
-output_file = r"D:\Projects\RTS Analysis\consumer_preprocessed_data.csv"
+input_file = r"D:\Projects\RTS Analysis\dataset\consumer_cleaned_data.csv"
+output_file = r"D:\Projects\RTS Analysis\dataset\consumer_preprocessed_data.csv"
 
 # Run preprocessing
 preprocess_data(input_file, output_file)

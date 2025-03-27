@@ -3,8 +3,8 @@ import pandas as pd
 print(f"Your dataset is in under cleaning phase...")
 
 # Define file locations
-input_file = r"D:\Projects\RTS Analysis\consumer_application_data.csv"
-output_file = r"D:\Projects\RTS Analysis\consumer_cleaned_data.csv"
+input_file = r"D:\Projects\RTS Analysis\dataset\consumer_application_data.csv"
+output_file = r"D:\Projects\RTS Analysis\dataset\consumer_cleaned_data.csv"
 
 # List of columns to extract
 columns_to_extract = [

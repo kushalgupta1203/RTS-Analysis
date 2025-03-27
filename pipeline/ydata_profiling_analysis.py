@@ -11,6 +11,6 @@ df = pd.read_csv(file_path)
 profile = ProfileReport(df, title="Solar Data Analysis", explorative=True)
 
 # Save report as HTML
-profile.to_file("solar_analysis_report.html")
+profile.to_file("testing.html")
 
-print("Report saved as solar_analysis_report.html")
+print("Report saved as testing.html")

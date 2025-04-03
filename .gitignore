@@ -6,6 +6,9 @@ sources/
 
 # Ignore dataset
 dataset/
+
+# Ignore dashboard html
+dashboard/testing.html
  
 # Ignore PowerPoint files 
 *.ppt 

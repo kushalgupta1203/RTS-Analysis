@@ -8,7 +8,7 @@ sources/
 dataset/
 
 # Ignore dashboard html
-dashboard/testing.html
+dashboard/solar_data_analysis.html
  
 # Ignore PowerPoint files 
 *.ppt 

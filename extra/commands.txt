@@ -3,5 +3,5 @@ cd "D:\Projects\RTS Analysis"
 .\venv\Scripts\Activate
 
 # Install requirements
-pip install -r requirements.txt
+pip install -r extra/requirements.txt
 
